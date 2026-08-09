@@ -27,9 +27,29 @@ It is designed for Laravel applications that need more than a simple log viewer.
 ## Requirements
 
 - PHP 8.2+
-- Laravel 12.x or compatible Illuminate components declared in `composer.json`
+- Laravel 10.x, 11.x, 12.x or 13.x, with compatible Illuminate components declared in `composer.json`
 - A database supported by Laravel
 - Read access to the configured log directory
+
+## Laravel compatibility
+
+The package is intended to support Laravel 10, 11, 12 and 13, as long as the host application runs on PHP 8.2+ and the installed Illuminate components match the constraints declared in `composer.json`.
+
+Recommended Composer constraints for Laravel 10+ support:
+
+```json
+"illuminate/console": "^10.0|^11.0|^12.0|^13.0",
+"illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+"illuminate/database": "^10.0|^11.0|^12.0|^13.0",
+"illuminate/filesystem": "^10.0|^11.0|^12.0|^13.0",
+"illuminate/http": "^10.0|^11.0|^12.0|^13.0",
+"illuminate/pagination": "^10.0|^11.0|^12.0|^13.0",
+"illuminate/routing": "^10.0|^11.0|^12.0|^13.0",
+"illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+"illuminate/view": "^10.0|^11.0|^12.0|^13.0"
+```
+
+Before using the package in production with Laravel 10 or 11, test installation, migrations, indexing, pruning and the dashboard in a clean application.
 
 ## Installation from GitHub during testing
 
@@ -370,6 +390,15 @@ php artisan error-log-monitor:index
 php artisan error-log-monitor:prune
 php artisan route:list | grep error-log-monitor
 ```
+
+Compatibility checks before claiming support for a Laravel version:
+
+- install in a clean Laravel 10 application;
+- install in a clean Laravel 12 application;
+- run migrations;
+- run the index and prune commands;
+- open the dashboard;
+- test issue actions and filters.
 
 Manual checks:
 
