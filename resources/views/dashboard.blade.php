@@ -154,6 +154,9 @@
         .stat-card { border: 1px solid var(--line); border-radius: 12px; background: var(--input-bg); padding: 14px; min-height: 92px; }
         .stat-label { color: var(--muted); font-size: 12px; font-weight: 700; margin-bottom: 8px; }
         .stat-value { color: var(--text-strong); font-size: 24px; line-height: 1.15; font-weight: 650; letter-spacing: -0.02em; }
+        .stat-value-link { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+        .stat-value-link:hover { color: var(--critical); }
+        .stat-value-link:focus-visible { border-radius: 3px; outline: 2px solid var(--critical); outline-offset: 2px; }
         .stat-value-small { font-size: 16px; line-height: 1.35; letter-spacing: 0; }
         .stat-hint { margin-top: 6px; color: var(--muted-2); font-size: 12px; }
         .stat-danger .stat-value { color: var(--critical); }

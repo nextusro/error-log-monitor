@@ -51,6 +51,13 @@ class LogIssue extends Model
         return $query->whereNotNull('ignored_at');
     }
 
+    public function scopeRegressions(Builder $query): Builder
+    {
+        return $query
+            ->whereNotNull('resolved_at')
+            ->whereColumn('last_seen_at', '>', 'resolved_at');
+    }
+
     public function getStatusAttribute(): string
     {
         if ($this->ignored_at !== null) {

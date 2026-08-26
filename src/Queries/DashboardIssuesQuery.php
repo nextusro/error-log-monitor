@@ -130,8 +130,22 @@ class DashboardIssuesQuery
             'open' => $query->open(),
             'resolved' => $query->resolved(),
             'ignored' => $query->ignored(),
+            'regressions' => $query
+                ->regressions()
+                ->whereIn('level', $this->levelsWithoutWarnings()),
             default => null,
         };
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function levelsWithoutWarnings(): array
+    {
+        return array_values(array_filter(
+            config('error-log-monitor.dashboard.levels', []),
+            static fn (mixed $level): bool => is_string($level) && $level !== 'warning',
+        ));
     }
 
     private function resolveIntervalStart(string $interval): ?Carbon

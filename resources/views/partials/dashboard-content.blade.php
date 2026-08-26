@@ -256,7 +256,7 @@
             <div class="field">
                 <label for="status">{{ __('error-log-monitor::messages.filters.status') }}</label>
                 <select id="status" name="status">
-                    @foreach(['open', 'resolved', 'ignored', 'all'] as $value)
+                    @foreach(['open', 'resolved', 'ignored', 'regressions', 'all'] as $value)
                         <option value="{{ $value }}" @selected(($filters['status'] ?? 'open') === $value)>
                             {{ __("error-log-monitor::messages.status.{$value}") }}
                         </option>
@@ -328,7 +328,15 @@
 
                 <div class="stat-card stat-danger">
                     <div class="stat-label">{{ __('error-log-monitor::messages.statistics.regressions') }}</div>
-                    <div class="stat-value">{{ number_format($statisticsCards['regressions'] ?? 0) }}</div>
+                    <div class="stat-value">
+                        <a
+                            class="stat-value-link"
+                            href="{{ route('error-log-monitor.dashboard', [
+                                'interval' => $statistics['interval'] ?? config('error-log-monitor.dashboard.default_interval', '24h'),
+                                'status' => 'regressions',
+                            ]) }}"
+                        >{{ number_format($statisticsCards['regressions'] ?? 0) }}</a>
+                    </div>
                     <div class="stat-hint">{{ __('error-log-monitor::messages.statistics.regressions_hint') }}</div>
                 </div>
 

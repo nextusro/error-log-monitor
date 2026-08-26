@@ -66,7 +66,7 @@ return [
         'all_files' => 'All files', 'directory' => 'Subdirectory', 'all_directories' => 'All subdirectories',
         'status' => 'Status', 'filter' => 'Filter', 'reset' => 'Reset',
     ],
-    'status' => ['open' => 'Open', 'resolved' => 'Resolved', 'ignored' => 'Ignored', 'all' => 'All'],
+    'status' => ['open' => 'Open', 'resolved' => 'Resolved', 'ignored' => 'Ignored', 'regressions' => 'Regressions', 'all' => 'All'],
     'intervals' => ['1h' => 'Last hour', '24h' => 'Last 24 hours', '7d' => 'Last 7 days', '14d' => 'Last 14 days', 'all' => 'All time'],
     'statistics' => [
         'title' => 'Statistics', 'description' => 'Calculated only for the selected interval: :interval. Warnings are not included.',

@@ -134,8 +134,7 @@ class DashboardStatsQuery
 
         return LogIssue::query()
             ->whereIn('level', $levels)
-            ->whereNotNull('resolved_at')
-            ->whereColumn('last_seen_at', '>', 'resolved_at')
+            ->regressions()
             ->when($from, fn ($query) => $query->where('last_seen_at', '>=', $from))
             ->count();
     }
