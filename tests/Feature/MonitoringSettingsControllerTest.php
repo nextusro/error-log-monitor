@@ -41,11 +41,11 @@ class MonitoringSettingsControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('data-settings-dialog', false);
-        $response->assertSee('Monitorizare loguri');
+        $response->assertSee('Log monitoring');
         $response->assertSee('data-bulk-actions-form', false);
         $response->assertSee('class="bulk-actions-toolbar"', false);
         $response->assertSee('hidden', false);
-        $response->assertSeeInOrder(['Ignoră selectate', 'Rezolvă selectate']);
+        $response->assertSeeInOrder(['Ignore selected', 'Resolve selected']);
         $this->assertSame(2, substr_count($response->getContent(), '<span data-bulk-selected-count>'));
     }
 
@@ -67,7 +67,7 @@ class MonitoringSettingsControllerTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('error-log-monitor.success', 'Acțiunile bulk au fost activate.');
+        $response->assertSessionHas('error-log-monitor.success', 'Bulk actions were enabled.');
 
         $setting = Setting::query()
             ->where('group', 'dashboard')

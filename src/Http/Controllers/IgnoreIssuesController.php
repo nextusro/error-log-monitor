@@ -29,6 +29,6 @@ class IgnoreIssuesController extends Controller
 
         return redirect()
             ->back()
-            ->with('error-log-monitor.success', "{$ignoredIssues} issue-uri au fost ignorate.");
+            ->with('error-log-monitor.success', trans('error-log-monitor::messages.bulk.ignored', ['count' => $ignoredIssues]));
     }
 }

@@ -21,7 +21,7 @@ class BulkResolveIssuesTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('error-log-monitor.success', '2 issue-uri au fost marcate ca rezolvate.');
+        $response->assertSessionHas('error-log-monitor.success', '2 issues were marked as resolved.');
         $this->assertNotNull($firstOpenIssue->fresh()->resolved_at);
         $this->assertNotNull($secondOpenIssue->fresh()->resolved_at);
         $this->assertTrue($resolvedIssue->resolved_at->equalTo($resolvedIssue->fresh()->resolved_at));

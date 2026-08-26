@@ -24,6 +24,7 @@ class ErrorLogMonitorServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'error-log-monitor');
         $this->registerRoutes();
         $this->registerViews();
         $this->registerMigrations();
@@ -75,6 +76,10 @@ class ErrorLogMonitorServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/error-log-monitor'),
         ], 'error-log-monitor-views');
+
+        $this->publishes([
+            __DIR__.'/../resources/lang' => $this->app->langPath('vendor/error-log-monitor'),
+        ], 'error-log-monitor-translations');
 
         $this->publishes([
             __DIR__.'/../database/migrations' => database_path('migrations'),

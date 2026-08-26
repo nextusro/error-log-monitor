@@ -31,12 +31,12 @@ class UpdateMonitoringStateController extends Controller
         if (! $request->boolean('enabled')) {
             return redirect()
                 ->back()
-                ->with('error-log-monitor.success', 'Monitorizarea a fost suspendată. Erorile noi nu vor fi indexate.');
+                ->with('error-log-monitor.success', trans('error-log-monitor::messages.monitoring.suspended'));
         }
 
         $message = $request->validated('resume_mode') === 'from_now'
-            ? "Monitorizarea a fost activată. {$movedCursors} fișiere vor fi urmărite doar pentru erorile viitoare."
-            : 'Monitorizarea a fost activată și va recupera erorile încă disponibile în fișierele de log.';
+            ? trans('error-log-monitor::messages.monitoring.enabled_from_now', ['count' => $movedCursors])
+            : trans('error-log-monitor::messages.monitoring.enabled_catch_up');
 
         return redirect()
             ->back()

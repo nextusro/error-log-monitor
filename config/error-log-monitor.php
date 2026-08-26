@@ -18,6 +18,11 @@ return [
     ],
 
     'dashboard' => [
+        'default_locale' => 'en',
+        'locales' => [
+            'en' => 'English',
+            'ro' => 'Română',
+        ],
         'per_page' => 50,
         'default_interval' => '24h',
 
@@ -50,11 +55,11 @@ return [
         ],
 
         'intervals' => [
-            '1h' => 'Ultima oră',
-            '24h' => '24h',
-            '7d' => '7 zile',
-            '14d' => '14 zile',
-            'all' => 'Tot intervalul',
+            '1h',
+            '24h',
+            '7d',
+            '14d',
+            'all',
         ],
     ],
 
@@ -103,6 +108,11 @@ return [
             ],
         ],
         'dashboard' => [
+            'locale' => [
+                'type' => 'string',
+                'config' => 'error-log-monitor.dashboard.default_locale',
+                'default' => 'en',
+            ],
             'bulk_actions_enabled' => [
                 'type' => 'boolean',
                 'config' => 'error-log-monitor.features.bulk_actions_enabled',

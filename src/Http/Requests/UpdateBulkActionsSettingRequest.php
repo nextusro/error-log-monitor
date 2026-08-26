@@ -29,7 +29,7 @@ class UpdateBulkActionsSettingRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'enabled.required' => 'Starea acțiunilor bulk este obligatorie.',
+            'enabled.required' => trans('error-log-monitor::messages.validation.bulk_state_required'),
         ];
     }
 }

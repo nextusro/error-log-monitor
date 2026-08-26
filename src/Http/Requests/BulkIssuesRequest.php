@@ -31,10 +31,10 @@ class BulkIssuesRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'issue_ids.required' => 'Selectează cel puțin o eroare.',
-            'issue_ids.min' => 'Selectează cel puțin o eroare.',
-            'issue_ids.max' => 'Poți modifica maximum 500 de erori într-o singură operație.',
-            'issue_ids.*.exists' => 'Una dintre erorile selectate nu mai există.',
+            'issue_ids.required' => trans('error-log-monitor::messages.validation.bulk_required'),
+            'issue_ids.min' => trans('error-log-monitor::messages.validation.bulk_required'),
+            'issue_ids.max' => trans('error-log-monitor::messages.validation.bulk_max'),
+            'issue_ids.*.exists' => trans('error-log-monitor::messages.validation.bulk_exists'),
         ];
     }
 }

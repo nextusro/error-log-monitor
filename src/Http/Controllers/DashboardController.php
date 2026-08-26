@@ -54,7 +54,11 @@ class DashboardController extends Controller
             'issues' => $issues,
             'statistics' => $statistics,
             'levels' => config('error-log-monitor.dashboard.levels', []),
-            'intervals' => config('error-log-monitor.dashboard.intervals', []),
+            'intervals' => collect(config('error-log-monitor.dashboard.intervals', []))
+                ->mapWithKeys(static fn (mixed $interval, int|string $key): array => [
+                    is_string($key) ? $key : (string) $interval => trans('error-log-monitor::messages.intervals.'.(is_string($key) ? $key : (string) $interval)),
+                ])
+                ->all(),
             'files' => $files,
             'directories' => $directories,
             'filters' => $filters,
@@ -67,6 +71,8 @@ class DashboardController extends Controller
                 'setting' => $monitoringState->setting(),
             ],
             'bulkActionsEnabled' => (bool) $settings->get('dashboard', 'bulk_actions_enabled'),
+            'dashboardLocale' => app()->getLocale(),
+            'dashboardLocales' => config('error-log-monitor.dashboard.locales', []),
         ]);
     }
 }

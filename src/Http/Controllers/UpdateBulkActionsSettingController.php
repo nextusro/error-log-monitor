@@ -22,7 +22,7 @@ class UpdateBulkActionsSettingController extends Controller
             ->back()
             ->with(
                 'error-log-monitor.success',
-                $enabled ? 'Acțiunile bulk au fost activate.' : 'Acțiunile bulk au fost dezactivate.'
+                trans($enabled ? 'error-log-monitor::messages.bulk.enabled' : 'error-log-monitor::messages.bulk.disabled')
             );
     }
 }

@@ -26,7 +26,7 @@ class DashboardStatsQuery
 
         return [
             'interval' => $interval,
-            'interval_label' => config('error-log-monitor.dashboard.intervals.' . $interval, $interval),
+            'interval_label' => trans("error-log-monitor::messages.intervals.{$interval}"),
             'from' => $from,
             'cards' => [
                 'open_issues' => $this->openIssues($from, $levels),

@@ -21,7 +21,7 @@ class BulkIgnoreIssuesTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('error-log-monitor.success', '2 issue-uri au fost ignorate.');
+        $response->assertSessionHas('error-log-monitor.success', '2 issues were ignored.');
         $this->assertNotNull($firstOpenIssue->fresh()->ignored_at);
         $this->assertNotNull($secondOpenIssue->fresh()->ignored_at);
         $this->assertTrue($ignoredIssue->ignored_at->equalTo($ignoredIssue->fresh()->ignored_at));

@@ -18,6 +18,6 @@ class IgnoreIssueController extends Controller
 
         return redirect()
             ->back()
-            ->with('error-log-monitor.success', 'Issue updated successfully.');
+            ->with('error-log-monitor.success', trans('error-log-monitor::messages.issues.updated'));
     }
 }

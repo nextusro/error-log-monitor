@@ -10,18 +10,18 @@
 <div class="header header-row">
     <div>
         <h1>Error Log Monitor</h1>
-        <p>Dashboard pentru erori, warning-uri și mesaje critice din logurile aplicației.</p>
+        <p>{{ __('error-log-monitor::messages.dashboard.description') }}</p>
     </div>
 
     <div class="header-actions">
-        <button type="button" class="settings-button" data-settings-open title="Setări" aria-label="Deschide setările">
+        <button type="button" class="settings-button" data-settings-open title="{{ __('error-log-monitor::messages.dashboard.settings') }}" aria-label="{{ __('error-log-monitor::messages.dashboard.open_settings') }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.34.7.65.94.3.24.68.38 1.07.4H21v4h-.09a1.7 1.7 0 0 0-1.51.66Z"></path>
             </svg>
         </button>
 
-        <div class="theme-switcher" role="group" aria-label="Schimbă tema">
+        <div class="theme-switcher" role="group" aria-label="{{ __('error-log-monitor::messages.dashboard.change_theme') }}">
             <button type="button" class="theme-option" data-theme-value="light">Light</button>
             <button type="button" class="theme-option" data-theme-value="dark">Dark</button>
         </div>
@@ -45,8 +45,8 @@
 @if(!($monitoring['enabled'] ?? true))
     <div class="monitoring-banner monitoring-banner-warning">
         <div>
-            <strong>Monitorizarea este suspendată.</strong>
-            Erorile continuă să fie scrise în logurile aplicației, dar nu sunt indexate în dashboard.
+            <strong>{{ __('error-log-monitor::messages.monitoring.paused_title') }}</strong>
+            {{ __('error-log-monitor::messages.monitoring.paused_description') }}
 
             @if(($monitoring['setting'] ?? null)?->updated_at)
                 <span class="monitoring-meta">
@@ -60,9 +60,9 @@
         </div>
 
         @if($monitoring['allowed_by_configuration'] ?? false)
-            <button type="button" class="btn btn-primary" data-settings-open>Reactivează</button>
+            <button type="button" class="btn btn-primary" data-settings-open>{{ __('error-log-monitor::messages.monitoring.reactivate') }}</button>
         @else
-            <span class="configuration-lock">Dezactivată din configurația aplicației</span>
+            <span class="configuration-lock">{{ __('error-log-monitor::messages.monitoring.disabled_by_config') }}</span>
         @endif
     </div>
 @endif
@@ -70,34 +70,34 @@
 <dialog class="settings-dialog" data-settings-dialog>
     <div class="settings-dialog-header">
         <div>
-            <h2>Setări Error Log Monitor</h2>
-            <p>Configurează comportamentul monitorului.</p>
+            <h2>{{ __('error-log-monitor::messages.settings.title') }}</h2>
+            <p>{{ __('error-log-monitor::messages.settings.description') }}</p>
         </div>
-        <button type="button" class="dialog-close" data-settings-close aria-label="Închide">&times;</button>
+        <button type="button" class="dialog-close" data-settings-close aria-label="{{ __('error-log-monitor::messages.settings.close') }}">&times;</button>
     </div>
 
     <div class="settings-layout">
-        <div class="settings-tabs" role="tablist" aria-label="Grupuri de setări">
-            <button type="button" class="settings-tab is-active" role="tab" aria-selected="true">General</button>
-            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>Indexare</button>
-            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>Notificări</button>
-            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>Retenție</button>
+        <div class="settings-tabs" role="tablist" aria-label="{{ __('error-log-monitor::messages.settings.groups') }}">
+            <button type="button" class="settings-tab is-active" role="tab" aria-selected="true">{{ __('error-log-monitor::messages.settings.general') }}</button>
+            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>{{ __('error-log-monitor::messages.settings.indexing') }}</button>
+            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>{{ __('error-log-monitor::messages.settings.notifications') }}</button>
+            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>{{ __('error-log-monitor::messages.settings.retention') }}</button>
         </div>
 
         <div class="settings-panel">
             <div class="setting-row">
                 <div>
-                    <h3>Monitorizare loguri</h3>
-                    <p>Controlează indexarea erorilor noi. Dashboardul și erorile existente rămân disponibile.</p>
+                    <h3>{{ __('error-log-monitor::messages.settings.monitoring') }}</h3>
+                    <p>{{ __('error-log-monitor::messages.settings.monitoring_description') }}</p>
                 </div>
                 <span class="monitoring-status {{ ($monitoring['enabled'] ?? true) ? 'is-enabled' : 'is-disabled' }}">
-                    {{ ($monitoring['enabled'] ?? true) ? 'Activă' : 'Suspendată' }}
+                    {{ ($monitoring['enabled'] ?? true) ? __('error-log-monitor::messages.settings.active') : __('error-log-monitor::messages.settings.suspended') }}
                 </span>
             </div>
 
             @if(!($monitoring['allowed_by_configuration'] ?? true))
                 <div class="settings-notice">
-                    Monitorizarea este dezactivată prin <code>ERROR_LOG_MONITOR_ENABLED</code> și nu poate fi activată din dashboard.
+                    {{ __('error-log-monitor::messages.settings.monitoring_config_disabled') }}
                 </div>
             @elseif($monitoring['enabled'] ?? true)
                 <form
@@ -110,10 +110,10 @@
                     <input type="hidden" name="enabled" value="0">
 
                     <div class="settings-warning">
-                        După suspendare nu se vor mai adăuga erori în monitor până la reactivare.
+                        {{ __('error-log-monitor::messages.settings.suspend_warning') }}
                     </div>
 
-                    <button type="submit" class="btn btn-danger">Suspendă monitorizarea</button>
+                    <button type="submit" class="btn btn-danger">{{ __('error-log-monitor::messages.settings.suspend') }}</button>
                 </form>
             @else
                 <form method="POST" action="{{ route('error-log-monitor.settings.monitoring.update') }}">
@@ -122,36 +122,36 @@
                     <input type="hidden" name="enabled" value="1">
 
                     <fieldset class="resume-options">
-                        <legend>Cum dorești să reiei monitorizarea?</legend>
+                        <legend>{{ __('error-log-monitor::messages.settings.resume_question') }}</legend>
 
                         <label class="resume-option">
                             <input type="radio" name="resume_mode" value="catch_up" checked>
                             <span>
-                                <strong>Recuperează erorile disponibile</strong>
-                                <small>Continuă de la ultimul cursor. Unele erori pot lipsi dacă logurile au fost rotite, comprimate sau șterse.</small>
+                                <strong>{{ __('error-log-monitor::messages.settings.catch_up') }}</strong>
+                                <small>{{ __('error-log-monitor::messages.settings.catch_up_description') }}</small>
                             </span>
                         </label>
 
                         <label class="resume-option">
                             <input type="radio" name="resume_mode" value="from_now">
                             <span>
-                                <strong>Monitorizează doar erorile viitoare</strong>
-                                <small>Ignoră conținutul actual și începe de la finalul fișierelor existente.</small>
+                                <strong>{{ __('error-log-monitor::messages.settings.from_now') }}</strong>
+                                <small>{{ __('error-log-monitor::messages.settings.from_now_description') }}</small>
                             </span>
                         </label>
                     </fieldset>
 
-                    <button type="submit" class="btn btn-primary">Activează monitorizarea</button>
+                    <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.settings.enable') }}</button>
                 </form>
             @endif
 
             <div class="setting-row setting-row-spaced">
                 <div>
-                    <h3>Acțiuni bulk</h3>
-                    <p>Permite marcarea simultană ca rezolvate sau ignorate a issue-urilor deschise.</p>
+                    <h3>{{ __('error-log-monitor::messages.settings.bulk_actions') }}</h3>
+                    <p>{{ __('error-log-monitor::messages.settings.bulk_actions_description') }}</p>
                 </div>
                 <span class="monitoring-status {{ ($bulkActionsEnabled ?? true) ? 'is-enabled' : 'is-disabled' }}">
-                    {{ ($bulkActionsEnabled ?? true) ? 'Active' : 'Dezactivate' }}
+                    {{ ($bulkActionsEnabled ?? true) ? __('error-log-monitor::messages.settings.active') : __('error-log-monitor::messages.settings.disabled') }}
                 </span>
             </div>
 
@@ -161,8 +161,29 @@
                 <input type="hidden" name="enabled" value="{{ ($bulkActionsEnabled ?? true) ? '0' : '1' }}">
 
                 <button type="submit" class="btn {{ ($bulkActionsEnabled ?? true) ? 'btn-danger' : 'btn-primary' }}">
-                    {{ ($bulkActionsEnabled ?? true) ? 'Dezactivează acțiunile bulk' : 'Activează acțiunile bulk' }}
+                    {{ ($bulkActionsEnabled ?? true) ? __('error-log-monitor::messages.settings.disable_bulk') : __('error-log-monitor::messages.settings.enable_bulk') }}
                 </button>
+            </form>
+
+            <div class="setting-row setting-row-spaced">
+                <div>
+                    <h3>{{ __('error-log-monitor::messages.settings.language') }}</h3>
+                    <p>{{ __('error-log-monitor::messages.settings.language_description') }}</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('error-log-monitor.settings.locale.update') }}">
+                @csrf
+                @method('PUT')
+                <div class="field" style="max-width: 280px; margin-bottom: 14px;">
+                    <label for="dashboard-locale">{{ __('error-log-monitor::messages.settings.language') }}</label>
+                    <select id="dashboard-locale" name="locale">
+                        @foreach($dashboardLocales as $locale => $label)
+                            <option value="{{ $locale }}" @selected($dashboardLocale === $locale)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.settings.save_language') }}</button>
             </form>
         </div>
     </div>
@@ -172,9 +193,9 @@
     <form method="GET" action="{{ route('error-log-monitor.dashboard') }}">
         <div class="filters">
             <div class="field">
-                <label for="level">Level</label>
+                <label for="level">{{ __('error-log-monitor::messages.filters.level') }}</label>
                 <select id="level" name="level">
-                    <option value="">Toate</option>
+                    <option value="">{{ __('error-log-monitor::messages.filters.all') }}</option>
 
                     @foreach($levels as $level)
                         <option value="{{ $level }}" @selected(($filters['level'] ?? null) === $level)>
@@ -185,7 +206,7 @@
             </div>
 
             <div class="field">
-                <label for="interval">Interval</label>
+                <label for="interval">{{ __('error-log-monitor::messages.filters.interval') }}</label>
                 <select id="interval" name="interval">
                     @foreach($intervals as $value => $label)
                         <option value="{{ $value }}" @selected(($filters['interval'] ?? null) === $value)>
@@ -196,20 +217,20 @@
             </div>
 
             <div class="field">
-                <label for="query">Query</label>
+                <label for="query">{{ __('error-log-monitor::messages.filters.query') }}</label>
                 <input
                     id="query"
                     type="text"
                     name="query"
                     value="{{ $filters['query'] ?? '' }}"
-                    placeholder="Caută în mesaj, excepție, stack trace..."
+                    placeholder="{{ __('error-log-monitor::messages.filters.query_placeholder') }}"
                 >
             </div>
 
             <div class="field">
-                <label for="file">Fișier</label>
+                <label for="file">{{ __('error-log-monitor::messages.filters.file') }}</label>
                 <select id="file" name="file">
-                    <option value="">Toate fișierele</option>
+                    <option value="">{{ __('error-log-monitor::messages.filters.all_files') }}</option>
 
                     @foreach($files as $file)
                         <option value="{{ $file }}" @selected(($filters['file'] ?? null) === $file)>
@@ -220,9 +241,9 @@
             </div>
 
             <div class="field">
-                <label for="directory">Subdirector</label>
+                <label for="directory">{{ __('error-log-monitor::messages.filters.directory') }}</label>
                 <select id="directory" name="directory">
-                    <option value="">Toate subdirectoarele</option>
+                    <option value="">{{ __('error-log-monitor::messages.filters.all_directories') }}</option>
 
                     @foreach($directories as $directory)
                         <option value="{{ $directory }}" @selected(($filters['directory'] ?? null) === $directory)>
@@ -233,11 +254,11 @@
             </div>
 
             <div class="field">
-                <label for="status">Status</label>
+                <label for="status">{{ __('error-log-monitor::messages.filters.status') }}</label>
                 <select id="status" name="status">
-                    @foreach(['open' => 'Open', 'resolved' => 'Resolved', 'ignored' => 'Ignored', 'all' => 'All'] as $value => $label)
+                    @foreach(['open', 'resolved', 'ignored', 'all'] as $value)
                         <option value="{{ $value }}" @selected(($filters['status'] ?? 'open') === $value)>
-                            {{ $label }}
+                            {{ __("error-log-monitor::messages.status.{$value}") }}
                         </option>
                     @endforeach
                 </select>
@@ -246,11 +267,11 @@
 
         <div class="toolbar">
             <button type="submit" class="btn btn-primary">
-                Filtrează
+                {{ __('error-log-monitor::messages.filters.filter') }}
             </button>
 
             <a href="{{ route('error-log-monitor.dashboard') }}" class="btn btn-link">
-                Resetează
+                {{ __('error-log-monitor::messages.filters.reset') }}
             </a>
         </div>
     </form>
@@ -260,9 +281,9 @@
     <div class="card statistics-card @if($statisticsCollapsed) is-collapsed @endif">
         <div class="statistics-header">
             <div>
-                <h2 class="section-title">Statistics</h2>
+                <h2 class="section-title">{{ __('error-log-monitor::messages.statistics.title') }}</h2>
                 <p class="section-subtitle">
-                    Calculat doar pentru intervalul selectat: {{ $statistics['interval_label'] ?? '-' }}. Warning-urile nu sunt incluse.
+                    {{ __('error-log-monitor::messages.statistics.description', ['interval' => $statistics['interval_label'] ?? '-']) }}
                 </p>
             </div>
 
@@ -275,52 +296,52 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M6 9l6 6 6-6"></path>
                 </svg>
-                <span data-statistics-toggle-label>{{ $statisticsCollapsed ? 'Expand' : 'Collapse' }}</span>
+                <span data-statistics-toggle-label>{{ $statisticsCollapsed ? __('error-log-monitor::messages.statistics.expand') : __('error-log-monitor::messages.statistics.collapse') }}</span>
             </button>
         </div>
 
         <div class="statistics-body">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Open issues</div>
+                    <div class="stat-label">{{ __('error-log-monitor::messages.statistics.open_issues') }}</div>
                     <div class="stat-value">{{ number_format($statisticsCards['open_issues'] ?? 0) }}</div>
-                    <div class="stat-hint">active în interval</div>
+                    <div class="stat-hint">{{ __('error-log-monitor::messages.statistics.active_in_interval') }}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-label">New issues</div>
+                    <div class="stat-label">{{ __('error-log-monitor::messages.statistics.new_issues') }}</div>
                     <div class="stat-value">{{ number_format($statisticsCards['new_issues'] ?? 0) }}</div>
-                    <div class="stat-hint">first seen în interval</div>
+                    <div class="stat-hint">{{ __('error-log-monitor::messages.statistics.first_seen_in_interval') }}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-label">Occurrences</div>
+                    <div class="stat-label">{{ __('error-log-monitor::messages.statistics.occurrences') }}</div>
                     <div class="stat-value">{{ number_format($statisticsCards['occurrences'] ?? 0) }}</div>
-                    <div class="stat-hint">apariții în interval</div>
+                    <div class="stat-hint">{{ __('error-log-monitor::messages.statistics.occurrences_in_interval') }}</div>
                 </div>
 
                 <div class="stat-card stat-danger">
-                    <div class="stat-label">Critical open</div>
+                    <div class="stat-label">{{ __('error-log-monitor::messages.statistics.critical_open') }}</div>
                     <div class="stat-value">{{ number_format($statisticsCards['critical_open'] ?? 0) }}</div>
-                    <div class="stat-hint">critical / alert / emergency</div>
+                    <div class="stat-hint">{{ __('error-log-monitor::messages.statistics.critical_levels') }}</div>
                 </div>
 
                 <div class="stat-card stat-danger">
-                    <div class="stat-label">Regressions</div>
+                    <div class="stat-label">{{ __('error-log-monitor::messages.statistics.regressions') }}</div>
                     <div class="stat-value">{{ number_format($statisticsCards['regressions'] ?? 0) }}</div>
-                    <div class="stat-hint">resolved, dar reapărute</div>
+                    <div class="stat-hint">{{ __('error-log-monitor::messages.statistics.regressions_hint') }}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-label">Last indexed</div>
+                    <div class="stat-label">{{ __('error-log-monitor::messages.statistics.last_indexed') }}</div>
                     <div class="stat-value stat-value-small">
                         {{ optional($statisticsCards['last_indexed_at'] ?? null)->format($dateFormat) ?? '-' }}
                     </div>
-                    <div class="stat-hint">ultima scanare</div>
+                    <div class="stat-hint">{{ __('error-log-monitor::messages.statistics.last_scan') }}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-label">DB records</div>
+                    <div class="stat-label">{{ __('error-log-monitor::messages.statistics.db_records') }}</div>
                     <div class="stat-value">{{ number_format($databaseStats['records'] ?? 0) }}</div>
                     <div class="stat-hint">
                         {{ number_format($databaseStats['issues'] ?? 0) }} issues ·
@@ -330,18 +351,18 @@
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-label">DB size</div>
+                    <div class="stat-label">{{ __('error-log-monitor::messages.statistics.db_size') }}</div>
                     <div class="stat-value stat-value-small">{{ $databaseStats['size_label'] ?? 'n/a' }}</div>
-                    <div class="stat-hint">date + indexuri pentru tabelele monitorului</div>
+                    <div class="stat-hint">{{ __('error-log-monitor::messages.statistics.db_size_hint') }}</div>
                 </div>
             </div>
 
             <div class="stats-panels">
                 <div class="stats-panel">
-                    <h3>Top recurring issues</h3>
+                    <h3>{{ __('error-log-monitor::messages.statistics.top_issues') }}</h3>
 
                     @if(empty($topIssues))
-                        <div class="stats-empty">Nu există date în intervalul selectat.</div>
+                        <div class="stats-empty">{{ __('error-log-monitor::messages.statistics.no_data') }}</div>
                     @else
                         <div class="stats-list">
                             @foreach($topIssues as $item)
@@ -354,7 +375,7 @@
                                 @endphp
 
                                 <div class="stats-row">
-                                    <a class="stats-row-link" href="{{ $topIssueUrl }}" title="Vezi eroarea în listă">
+                                    <a class="stats-row-link" href="{{ $topIssueUrl }}" title="{{ __('error-log-monitor::messages.statistics.view_issue') }}">
                                         <div class="stats-row-title">{{ $topIssue->normalized_message }}</div>
                                         @if($topIssue->last_file_path)
                                             <div class="stats-row-meta">{{ $topIssue->last_file_path }}</div>
@@ -368,10 +389,10 @@
                 </div>
 
                 <div class="stats-panel">
-                    <h3>Top sources</h3>
+                    <h3>{{ __('error-log-monitor::messages.statistics.top_sources') }}</h3>
 
                     @if(empty($topSources))
-                        <div class="stats-empty">Nu există date în intervalul selectat.</div>
+                        <div class="stats-empty">{{ __('error-log-monitor::messages.statistics.no_data') }}</div>
                     @else
                         <div class="stats-list">
                             @foreach($topSources as $source)
@@ -390,7 +411,7 @@
 
 <div class="card">
     <div class="issues-header">
-        <h2 class="section-title">Issues</h2>
+        <h2 class="section-title">{{ __('error-log-monitor::messages.issues.title') }}</h2>
 
         @if($bulkActionsEnabled ?? true)
             <form
@@ -408,22 +429,22 @@
                     class="btn btn-warning"
                     formaction="{{ route('error-log-monitor.issues.ignore-bulk') }}"
                     data-bulk-action-button
-                    data-bulk-action-label="ignorate"
+                    data-bulk-action-label="{{ __('error-log-monitor::messages.status.ignored') }}"
                 >
-                    Ignoră selectate (<span data-bulk-selected-count>0</span>)
+                    {{ __('error-log-monitor::messages.bulk.ignore_selected') }} (<span data-bulk-selected-count>0</span>)
                 </button>
-                <button type="submit" class="btn btn-primary" data-bulk-action-button data-bulk-action-label="rezolvate">
-                    Rezolvă selectate (<span data-bulk-selected-count>0</span>)
+                <button type="submit" class="btn btn-primary" data-bulk-action-button data-bulk-action-label="{{ __('error-log-monitor::messages.status.resolved') }}">
+                    {{ __('error-log-monitor::messages.bulk.resolve_selected') }} (<span data-bulk-selected-count>0</span>)
                 </button>
             </form>
         @endif
     </div>
 
     @if($issues->isEmpty())
-        <p class="section-subtitle">Nu există erori pentru filtrele selectate.</p>
+        <p class="section-subtitle">{{ __('error-log-monitor::messages.issues.empty') }}</p>
     @else
         <p class="section-subtitle">
-            Afișare {{ $issues->firstItem() }}-{{ $issues->lastItem() }} din {{ $issues->total() }} issue-uri.
+            {{ __('error-log-monitor::messages.issues.showing', ['first' => $issues->firstItem(), 'last' => $issues->lastItem(), 'total' => $issues->total()]) }}
         </p>
 
         {{-- Desktop / tablet --}}
@@ -433,17 +454,17 @@
                     <tr>
                         @if($bulkActionsEnabled ?? true)
                             <th class="col-select">
-                                <input type="checkbox" data-bulk-select-all aria-label="Selectează toate issue-urile deschise de pe pagină">
+                                <input type="checkbox" data-bulk-select-all aria-label="{{ __('error-log-monitor::messages.bulk.select_all') }}">
                             </th>
                         @endif
-                        <th class="col-level">Level</th>
-                        <th class="col-message">Message</th>
-                        <th class="col-count">Occurrences</th>
-                        <th class="col-date">First seen</th>
-                        <th class="col-date">Last seen</th>
-                        <th class="col-source">Last source</th>
-                        <th class="col-status">Status</th>
-                        <th class="col-actions">Actions</th>
+                        <th class="col-level">{{ __('error-log-monitor::messages.filters.level') }}</th>
+                        <th class="col-message">{{ __('error-log-monitor::messages.issues.message') }}</th>
+                        <th class="col-count">{{ __('error-log-monitor::messages.issues.occurrences') }}</th>
+                        <th class="col-date">{{ __('error-log-monitor::messages.issues.first_seen') }}</th>
+                        <th class="col-date">{{ __('error-log-monitor::messages.issues.last_seen') }}</th>
+                        <th class="col-source">{{ __('error-log-monitor::messages.issues.last_source') }}</th>
+                        <th class="col-status">{{ __('error-log-monitor::messages.filters.status') }}</th>
+                        <th class="col-actions">{{ __('error-log-monitor::messages.issues.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -475,7 +496,7 @@
                                             type="checkbox"
                                             value="{{ $issue->id }}"
                                             data-bulk-issue
-                                            aria-label="Selectează issue-ul {{ $issue->id }}"
+                                            aria-label="{{ __('error-log-monitor::messages.bulk.select_issue', ['id' => $issue->id]) }}"
                                         >
                                     @endif
                                 </td>
@@ -506,7 +527,7 @@
                                                         <path d="M12 8v4l3 3"></path>
                                                         <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 0H8"></path>
                                                     </svg>
-                                                    REGRESSION
+                                                    {{ strtoupper(__('error-log-monitor::messages.issues.regression')) }}
                                                 </span>
                                             @endif
                                         </div>
@@ -559,7 +580,7 @@
                                     @if($issue->status === 'open')
                                         <form method="POST" action="{{ route('error-log-monitor.issues.resolve', $issue->id) }}" class="inline-form">
                                             @csrf
-                                            <button type="submit" class="icon-action icon-action-success" title="Marchează ca rezolvat" aria-label="Marchează ca rezolvat">
+                                            <button type="submit" class="icon-action icon-action-success" title="{{ __('error-log-monitor::messages.issues.resolve') }}" aria-label="{{ __('error-log-monitor::messages.issues.resolve') }}">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M20 6L9 17l-5-5"></path>
                                                 </svg>
@@ -568,7 +589,7 @@
 
                                         <form method="POST" action="{{ route('error-log-monitor.issues.ignore', $issue->id) }}" class="inline-form">
                                             @csrf
-                                            <button type="submit" class="icon-action icon-action-warning" title="Ignoră" aria-label="Ignoră">
+                                            <button type="submit" class="icon-action icon-action-warning" title="{{ __('error-log-monitor::messages.issues.ignore') }}" aria-label="{{ __('error-log-monitor::messages.issues.ignore') }}">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 3l18 18"></path>
                                                     <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83"></path>
@@ -580,7 +601,7 @@
                                     @else
                                         <form method="POST" action="{{ route('error-log-monitor.issues.reopen', $issue->id) }}" class="inline-form">
                                             @csrf
-                                            <button type="submit" class="icon-action icon-action-neutral" title="Reopen" aria-label="Reopen">
+                                            <button type="submit" class="icon-action icon-action-neutral" title="{{ __('error-log-monitor::messages.issues.reopen') }}" aria-label="{{ __('error-log-monitor::messages.issues.reopen') }}">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
                                                     <path d="M3 3v5h5"></path>
@@ -599,7 +620,7 @@
                                         <pre class="logviewer-message">{{ $issue->last_message ?: $issue->normalized_message }}</pre>
 
                                         @if(!empty($issue->last_context))
-                                            <h4>Context:</h4>
+                                            <h4>{{ __('error-log-monitor::messages.issues.context') }}</h4>
                                             @php
                                                 $decodedContext = json_decode($issue->last_context, true);
                                                 $prettyContext = json_last_error() === JSON_ERROR_NONE
@@ -610,7 +631,7 @@
                                         @endif
 
                                         @if(!empty($issue->last_stack_trace))
-                                            <h4>Stack trace:</h4>
+                                            <h4>{{ __('error-log-monitor::messages.issues.stack_trace') }}</h4>
                                             <pre class="stack-pre">{{ $issue->last_stack_trace }}</pre>
                                         @endif
                                     </div>
@@ -652,7 +673,7 @@
                                 class="mobile-bulk-checkbox"
                                 value="{{ $issue->id }}"
                                 data-bulk-issue
-                                aria-label="Selectează issue-ul {{ $issue->id }}"
+                                aria-label="{{ __('error-log-monitor::messages.bulk.select_issue', ['id' => $issue->id]) }}"
                             >
                         @endif
 
@@ -702,31 +723,31 @@
                                     <path d="M12 8v4l3 3"></path>
                                     <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 0H8"></path>
                                 </svg>
-                                REGRESSION
+                                        {{ strtoupper(__('error-log-monitor::messages.issues.regression')) }}
                             </span>
                         @endif
                     </div>
 
                     <div class="issue-grid">
                         <div class="issue-grid-item">
-                            <div class="issue-grid-label">Occurrences</div>
+                            <div class="issue-grid-label">{{ __('error-log-monitor::messages.issues.occurrences') }}</div>
                             <div class="issue-grid-value">{{ $issue->occurrences_count }}</div>
                         </div>
 
                         <div class="issue-grid-item">
-                            <div class="issue-grid-label">Last source</div>
+                            <div class="issue-grid-label">{{ __('error-log-monitor::messages.issues.last_source') }}</div>
                             <div class="issue-grid-value">
                                 {{ $issue->last_file_path ?? '-' }}
                             </div>
                         </div>
 
                         <div class="issue-grid-item">
-                            <div class="issue-grid-label">First seen</div>
+                            <div class="issue-grid-label">{{ __('error-log-monitor::messages.issues.first_seen') }}</div>
                             <div class="issue-grid-value">{{ optional($issue->first_seen_at)->format($dateFormat) }}</div>
                         </div>
 
                         <div class="issue-grid-item">
-                            <div class="issue-grid-label">Last seen</div>
+                            <div class="issue-grid-label">{{ __('error-log-monitor::messages.issues.last_seen') }}</div>
                             <div class="issue-grid-value">{{ optional($issue->last_seen_at)->format($dateFormat) }}</div>
                         </div>
                     </div>
@@ -736,7 +757,7 @@
                             <pre class="logviewer-message">{{ $issue->last_message ?: $issue->normalized_message }}</pre>
 
                             @if(!empty($issue->last_context))
-                                <h4>Context:</h4>
+                                <h4>{{ __('error-log-monitor::messages.issues.context') }}</h4>
                                 @php
                                     $decodedContext = json_decode($issue->last_context, true);
                                     $prettyContext = json_last_error() === JSON_ERROR_NONE
@@ -747,7 +768,7 @@
                             @endif
 
                             @if(!empty($issue->last_stack_trace))
-                                <h4>Stack trace:</h4>
+                                <h4>{{ __('error-log-monitor::messages.issues.stack_trace') }}</h4>
                                 <pre class="stack-pre">{{ $issue->last_stack_trace }}</pre>
                             @endif
                         </div>
@@ -758,7 +779,7 @@
                             @if($issue->status === 'open')
                                 <form method="POST" action="{{ route('error-log-monitor.issues.resolve', $issue->id) }}" class="inline-form">
                                     @csrf
-                                    <button type="submit" class="icon-action icon-action-success" title="Marchează ca rezolvat" aria-label="Marchează ca rezolvat">
+                                    <button type="submit" class="icon-action icon-action-success" title="{{ __('error-log-monitor::messages.issues.resolve') }}" aria-label="{{ __('error-log-monitor::messages.issues.resolve') }}">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M20 6L9 17l-5-5"></path>
                                         </svg>
@@ -767,7 +788,7 @@
 
                                 <form method="POST" action="{{ route('error-log-monitor.issues.ignore', $issue->id) }}" class="inline-form">
                                     @csrf
-                                    <button type="submit" class="icon-action icon-action-warning" title="Ignoră" aria-label="Ignoră">
+                                    <button type="submit" class="icon-action icon-action-warning" title="{{ __('error-log-monitor::messages.issues.ignore') }}" aria-label="{{ __('error-log-monitor::messages.issues.ignore') }}">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M3 3l18 18"></path>
                                             <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83"></path>
@@ -779,7 +800,7 @@
                             @else
                                 <form method="POST" action="{{ route('error-log-monitor.issues.reopen', $issue->id) }}" class="inline-form">
                                     @csrf
-                                    <button type="submit" class="icon-action icon-action-neutral" title="Reopen" aria-label="Reopen">
+                                    <button type="submit" class="icon-action icon-action-neutral" title="{{ __('error-log-monitor::messages.issues.reopen') }}" aria-label="{{ __('error-log-monitor::messages.issues.reopen') }}">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
                                             <path d="M3 3v5h5"></path>
@@ -814,7 +835,7 @@
                     @if($issues->onFirstPage())
                         <span class="elm-page-disabled elm-page-arrow" aria-hidden="true">‹</span>
                     @else
-                        <a class="elm-page-link elm-page-arrow" href="{{ $issues->previousPageUrl() }}" rel="prev" aria-label="Pagina anterioară">‹</a>
+                        <a class="elm-page-link elm-page-arrow" href="{{ $issues->previousPageUrl() }}" rel="prev" aria-label="{{ __('error-log-monitor::messages.issues.previous_page') }}">‹</a>
                     @endif
 
                     @foreach($paginationItems as $paginationItem)
@@ -828,7 +849,7 @@
                     @endforeach
 
                     @if($issues->hasMorePages())
-                        <a class="elm-page-link elm-page-arrow" href="{{ $issues->nextPageUrl() }}" rel="next" aria-label="Pagina următoare">›</a>
+                        <a class="elm-page-link elm-page-arrow" href="{{ $issues->nextPageUrl() }}" rel="next" aria-label="{{ __('error-log-monitor::messages.issues.next_page') }}">›</a>
                     @else
                         <span class="elm-page-disabled elm-page-arrow" aria-hidden="true">›</span>
                     @endif

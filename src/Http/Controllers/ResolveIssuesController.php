@@ -29,6 +29,6 @@ class ResolveIssuesController extends Controller
 
         return redirect()
             ->back()
-            ->with('error-log-monitor.success', "{$resolvedIssues} issue-uri au fost marcate ca rezolvate.");
+            ->with('error-log-monitor.success', trans('error-log-monitor::messages.bulk.resolved', ['count' => $resolvedIssues]));
     }
 }

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ro" data-theme="{{ $defaultTheme ?? 'light' }}">
+<html lang="{{ app()->getLocale() }}" data-theme="{{ $defaultTheme ?? 'light' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1272,9 +1272,11 @@
             form.addEventListener('submit', function (event) {
                 const selected = selectedIds();
 
-                const actionLabel = event.submitter?.getAttribute('data-bulk-action-label') || 'modificate';
+                const actionLabel = event.submitter?.getAttribute('data-bulk-action-label') || @json(__('error-log-monitor::messages.javascript.changed'));
+                const confirmation = @json(__('error-log-monitor::messages.javascript.confirm_bulk'))
+                    .replace(':action', actionLabel.toLowerCase());
 
-                if (selected.length === 0 || !window.confirm('Confirmi marcarea ca ' + actionLabel + ' a issue-urilor selectate?')) {
+                if (selected.length === 0 || !window.confirm(confirmation)) {
                     event.preventDefault();
                     return;
                 }
@@ -1312,7 +1314,7 @@
 
         if (disableMonitoringForm) {
             disableMonitoringForm.addEventListener('submit', function (event) {
-                const confirmed = window.confirm('Confirmi suspendarea monitorizării? Erorile noi nu vor mai fi indexate până la reactivare.');
+                const confirmed = window.confirm(@json(__('error-log-monitor::messages.javascript.confirm_suspend')));
 
                 if (!confirmed) {
                     event.preventDefault();
@@ -1340,7 +1342,9 @@
             const label = button.querySelector('[data-statistics-toggle-label]');
 
             if (label) {
-                label.textContent = isCollapsed ? 'Expand' : 'Collapse';
+                label.textContent = isCollapsed
+                    ? @json(__('error-log-monitor::messages.statistics.expand'))
+                    : @json(__('error-log-monitor::messages.statistics.collapse'));
             }
         });
     </script>

@@ -35,8 +35,8 @@ class UpdateMonitoringStateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'enabled.required' => 'Starea monitorizării este obligatorie.',
-            'resume_mode.required' => 'Selectează cum dorești să reiei monitorizarea.',
+            'enabled.required' => trans('error-log-monitor::messages.validation.monitoring_state_required'),
+            'resume_mode.required' => trans('error-log-monitor::messages.validation.resume_mode_required'),
             'resume_mode.in' => 'Modul de reluare selectat nu este valid.',
         ];
     }
