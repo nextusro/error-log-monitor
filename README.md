@@ -10,8 +10,15 @@ It is designed for Laravel applications that need more than a simple log viewer.
 - Database-backed log indexing
 - Error grouping by fingerprint
 - Issue statuses: `open`, `resolved`, `ignored`
-- Regression detection
+- Regression detection, statistics, and filtering
 - Filtering by level, interval, query, file, directory, and status
+- Configurable bulk resolve and ignore actions
+- Runtime monitoring pause/resume controls
+- Resume from the previous cursor or skip directly to new log entries
+- English and Romanian dashboard translations
+- Configurable dashboard language
+- Email notifications for new issues, regressions, and database size
+- Config defaults with audited dashboard overrides
 - Log files and nested log directories support
 - Statistics for the selected interval
 - Top recurring issues
@@ -43,6 +50,7 @@ Recommended Composer constraints for Laravel 10+ support:
 "illuminate/database": "^10.0|^11.0|^12.0|^13.0",
 "illuminate/filesystem": "^10.0|^11.0|^12.0|^13.0",
 "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
+"illuminate/notifications": "^10.0|^11.0|^12.0|^13.0",
 "illuminate/pagination": "^10.0|^11.0|^12.0|^13.0",
 "illuminate/routing": "^10.0|^11.0|^12.0|^13.0",
 "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
@@ -137,7 +145,10 @@ The package creates tables for:
 
 - scanned log files;
 - grouped log issues;
-- individual log occurrences.
+- individual log occurrences;
+- dashboard setting overrides;
+- setting change history;
+- notification delivery state and deduplication.
 
 ## Dashboard
 
@@ -156,6 +167,21 @@ The main configuration file is:
 ```text
 config/error-log-monitor.php
 ```
+
+### Global monitoring switch
+
+```php
+'enabled' => env('ERROR_LOG_MONITOR_ENABLED', true),
+```
+
+This is the hard application-level switch. When it is `false`, monitoring cannot be enabled from the dashboard.
+
+When the hard switch allows monitoring, an authorized dashboard user can suspend or resume indexing. On resume, the user can either:
+
+- continue from the previously stored log cursors and catch up with available entries;
+- move all cursors to the current end of each log file and monitor only future entries.
+
+Pausing indexing does not remove existing issues and does not disable the dashboard.
 
 ### Route configuration
 
@@ -195,9 +221,14 @@ Gate::define('viewErrorLogMonitor', function ($user) {
 
 ```php
 'dashboard' => [
+    'default_locale' => 'en',
+    'locales' => [
+        'en' => 'English',
+        'ro' => 'Română',
+    ],
     'per_page' => 50,
     'default_interval' => '24h',
-    'date_format' => 'Y-m-d H:i:s',
+    'date_format' => 'd.m.Y H:i:s',
     'statistics_collapsed_by_default' => false,
     'default_theme' => 'light',
 
@@ -209,13 +240,7 @@ Gate::define('viewErrorLogMonitor', function ($user) {
         'emergency',
     ],
 
-    'intervals' => [
-        '1h' => 'Last hour',
-        '24h' => '24h',
-        '7d' => '7 days',
-        '14d' => '14 days',
-        'all' => 'All time',
-    ],
+    'intervals' => ['1h', '24h', '7d', '14d', 'all'],
 ],
 ```
 
@@ -226,6 +251,26 @@ Notes:
 - `date_format` controls dashboard date formatting;
 - `statistics_collapsed_by_default` controls the initial statistics panel state;
 - `default_interval` controls the default selected interval.
+- `default_locale` is used until a language is selected in the dashboard;
+- `locales` defines the languages available in the settings interface;
+- dashboard language overrides are stored in the package settings table;
+- notification language is independent of the dashboard selection and uses the host application's `app.locale` when the notification is sent.
+
+The package ships with English and Romanian translations. Published translations can be customized with:
+
+```bash
+php artisan vendor:publish --tag=error-log-monitor-translations
+```
+
+### Feature configuration
+
+```php
+'features' => [
+    'bulk_actions_enabled' => true,
+],
+```
+
+Bulk actions allow up to 500 selected open issues to be resolved or ignored in one request. They can be disabled by default in config and overridden from the dashboard settings.
 
 ### Log configuration
 
@@ -287,12 +332,51 @@ Recommended default behavior:
 ```php
 'notifications' => [
     'enabled' => false,
+    'recipients' => [
+        'alerts@example.com',
+    ],
+    'regressions_enabled' => true,
+    'database_size_enabled' => true,
+    'database_size_threshold_mb' => 500,
     'levels' => ['critical', 'alert', 'emergency'],
     'cooldown_minutes' => 60,
 ],
 ```
 
-Notifications are reserved for a future version. In the current version, the dashboard and database indexing are the primary features.
+The values above are defaults. The Notifications tab in the dashboard can override:
+
+- whether notifications are enabled;
+- one or more email recipients;
+- regression notifications;
+- database size notifications and their threshold in MB;
+- the levels that trigger notifications for newly discovered issues.
+
+Recipient addresses can be separated by commas, spaces, semicolons, or new lines. All addresses are validated and duplicates are removed before saving.
+
+Notification behavior:
+
+- a selected log level sends one notification when a new grouped issue is created, not for every occurrence;
+- a resolved issue sends one regression notification when it occurs again;
+- resolving the same issue again starts a new regression cycle;
+- the database alert measures the package tables and indexes, not the entire host database;
+- while the database remains above the threshold, reminders respect `cooldown_minutes`;
+- after usage drops below the threshold, the alert is rearmed for the next threshold crossing.
+
+Notifications use Laravel's configured mailer and are sent synchronously. A queue worker is not required. Configure mail in the host application before enabling notifications.
+
+The notification language is the host application's default locale at send time:
+
+```php
+config('app.locale')
+```
+
+Custom notification templates are not currently configurable.
+
+### Dashboard setting overrides
+
+The dashboard stores runtime overrides in `error_log_monitor_settings`. If no override exists, the corresponding config value is used.
+
+Changes made through the dashboard are recorded in `error_log_monitor_setting_changes`, including the authenticated actor when one is available. Protect settings routes with authentication and/or `route.authorization_gate` in production.
 
 ## Artisan commands
 
@@ -345,9 +429,10 @@ Schedule::command('error-log-monitor:prune')->daily();
 4. Run the indexer.
 5. Open the dashboard.
 6. Review issues.
-7. Mark issues as resolved, ignored, or reopen them.
-8. Monitor statistics and database size.
-9. Configure the scheduler.
+7. Mark issues as resolved, ignored, or reopen them, individually or in bulk.
+8. Filter regressions and monitor statistics and database size.
+9. Configure monitoring, language, bulk actions, and notifications from the settings dialog.
+10. Configure the scheduler.
 
 ## GitHub publishing checklist
 
@@ -399,6 +484,11 @@ Compatibility checks before claiming support for a Laravel version:
 - run the index and prune commands;
 - open the dashboard;
 - test issue actions and filters.
+- test monitoring pause and both resume modes;
+- test bulk resolve and ignore actions;
+- test English and Romanian dashboard languages;
+- test regression filtering;
+- test notification delivery with the host application's mailer.
 
 Manual checks:
 
@@ -409,6 +499,12 @@ Manual checks:
 - prune command works;
 - filters work;
 - issue actions work: resolve, ignore, reopen;
+- bulk resolve and ignore actions work;
+- monitoring can be suspended and resumed in both modes;
+- dashboard language can be changed;
+- regression cards and filters show the same issue set;
+- notification recipients and triggering levels can be saved;
+- new issue, regression, and database threshold emails are delivered;
 - stack trace/context expansion works;
 - light/dark switch works;
 - selected theme persists;
@@ -420,7 +516,8 @@ Manual checks:
 ## Known limitations for the first version
 
 - compressed `.gz` logs are not indexed;
-- notifications are not active yet;
+- notification templates are not configurable;
+- notification delivery is synchronous;
 - charts are not included;
 - advanced ignore rules are not included;
 - export is not included;
@@ -440,8 +537,9 @@ Manual checks:
 ### v0.3
 
 - configurable ignore rules;
-- critical/alert/emergency notifications;
 - spike detection;
+- optional notification channels;
+- configurable notification templates;
 - CSV export;
 - optional `.gz` support.
 
@@ -514,6 +612,19 @@ Then run:
 ```bash
 php artisan error-log-monitor:prune
 ```
+
+### Notification emails are not sent
+
+Check:
+
+- notifications are enabled in the dashboard or config;
+- at least one valid recipient is configured;
+- the issue level is selected, or the relevant regression/database option is enabled;
+- the host application's Laravel mailer is configured and can send mail;
+- the database size threshold is expressed in MB;
+- the notification is not currently deduplicated or inside its cooldown period.
+
+No queue worker is required because package notifications are sent synchronously.
 
 ## License
 
