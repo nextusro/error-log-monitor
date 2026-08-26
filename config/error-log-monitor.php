@@ -3,6 +3,12 @@
 declare(strict_types=1);
 
 return [
+    /*
+     * Hard switch controlled by the application administrator. When disabled,
+     * monitoring cannot be enabled from the dashboard.
+     */
+    'enabled' => env('ERROR_LOG_MONITOR_ENABLED', true),
+
     'route' => [
         'enabled' => true,
         'prefix' => 'admin/error-log-monitor',
@@ -83,5 +89,14 @@ return [
         'enabled' => false,
         'levels' => ['critical', 'alert', 'emergency'],
         'cooldown_minutes' => 60,
+    ],
+
+    'settings' => [
+        'general' => [
+            'monitoring_enabled' => [
+                'type' => 'boolean',
+                'default' => true,
+            ],
+        ],
     ],
 ];

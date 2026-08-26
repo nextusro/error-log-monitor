@@ -7,6 +7,7 @@ use Nextus\ErrorLogMonitor\Http\Controllers\DashboardController;
 use Nextus\ErrorLogMonitor\Http\Controllers\IgnoreIssueController;
 use Nextus\ErrorLogMonitor\Http\Controllers\ReopenIssueController;
 use Nextus\ErrorLogMonitor\Http\Controllers\ResolveIssueController;
+use Nextus\ErrorLogMonitor\Http\Controllers\UpdateMonitoringStateController;
 
 $routeConfig = config('error-log-monitor.route', []);
 $middleware = $routeConfig['middleware'] ?? ['web'];
@@ -23,4 +24,5 @@ Route::prefix($routeConfig['prefix'] ?? 'admin/error-log-monitor')
         Route::post('/issues/{issue}/resolve', ResolveIssueController::class)->name('issues.resolve');
         Route::post('/issues/{issue}/ignore', IgnoreIssueController::class)->name('issues.ignore');
         Route::post('/issues/{issue}/reopen', ReopenIssueController::class)->name('issues.reopen');
+        Route::put('/settings/monitoring', UpdateMonitoringStateController::class)->name('settings.monitoring.update');
     });

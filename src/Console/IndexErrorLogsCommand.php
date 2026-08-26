@@ -6,6 +6,7 @@ namespace Nextus\ErrorLogMonitor\Console;
 
 use Illuminate\Console\Command;
 use Nextus\ErrorLogMonitor\Services\LogIndexer;
+use Nextus\ErrorLogMonitor\Services\MonitoringState;
 
 class IndexErrorLogsCommand extends Command
 {
@@ -15,8 +16,14 @@ class IndexErrorLogsCommand extends Command
 
     protected $description = 'Index Laravel log errors, warnings and critical messages into the Error Log Monitor tables.';
 
-    public function handle(LogIndexer $indexer): int
+    public function handle(LogIndexer $indexer, MonitoringState $monitoringState): int
     {
+        if (! $monitoringState->isEnabled()) {
+            $this->warn('Error Log Monitor is disabled. No log entries were indexed.');
+
+            return self::SUCCESS;
+        }
+
         $stats = $indexer->run(
             onlyFile: is_string($this->option('file')) ? $this->option('file') : null,
             fresh: (bool) $this->option('fresh'),

@@ -1,20 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nextus\ErrorLogMonitor\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\View\View;
 use Nextus\ErrorLogMonitor\Models\LogFile;
 use Nextus\ErrorLogMonitor\Queries\DashboardIssuesQuery;
 use Nextus\ErrorLogMonitor\Queries\DashboardStatsQuery;
+use Nextus\ErrorLogMonitor\Services\MonitoringState;
 
 class DashboardController extends Controller
 {
     public function __invoke(
         Request $request,
         DashboardIssuesQuery $issuesQuery,
-        DashboardStatsQuery $statsQuery
-    ) {
+        DashboardStatsQuery $statsQuery,
+        MonitoringState $monitoringState,
+    ): View {
         $filters = [
             'level' => $request->query('level'),
             'interval' => $request->query('interval', config('error-log-monitor.dashboard.default_interval', '24h')),
@@ -54,6 +59,11 @@ class DashboardController extends Controller
             'dateFormat' => config('error-log-monitor.dashboard.date_format', 'Y-m-d H:i:s'),
             'statisticsCollapsedByDefault' => (bool) config('error-log-monitor.dashboard.statistics_collapsed_by_default', false),
             'defaultTheme' => config('error-log-monitor.dashboard.default_theme', 'light'),
+            'monitoring' => [
+                'enabled' => $monitoringState->isEnabled(),
+                'allowed_by_configuration' => $monitoringState->isAllowedByConfiguration(),
+                'setting' => $monitoringState->setting(),
+            ],
         ]);
     }
 }

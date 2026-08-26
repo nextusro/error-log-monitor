@@ -14,14 +14,18 @@ class LogIndexer
         private readonly LogFileDiscovery $discovery,
         private readonly LaravelLogParser $parser,
         private readonly LogIssueIndexer $issueIndexer,
-    ) {
-    }
+        private readonly MonitoringState $monitoringState,
+    ) {}
 
     /**
      * @return array{files:int,entries:int,issues:int,skipped:int}
      */
     public function run(?string $onlyFile = null, bool $fresh = false): array
     {
+        if (! $this->monitoringState->isEnabled()) {
+            return ['files' => 0, 'entries' => 0, 'issues' => 0, 'skipped' => 0];
+        }
+
         $startedAt = microtime(true);
         $maxRuntime = (int) config('error-log-monitor.indexing.max_runtime_seconds', 30);
         $maxFiles = (int) config('error-log-monitor.indexing.max_files_per_run', 50);
@@ -33,6 +37,10 @@ class LogIndexer
         $stats = ['files' => 0, 'entries' => 0, 'issues' => 0, 'skipped' => 0];
 
         foreach ($paths as $path) {
+            if (! $this->monitoringState->isEnabled()) {
+                break;
+            }
+
             if ($stats['files'] >= $maxFiles || (microtime(true) - $startedAt) >= $maxRuntime) {
                 break;
             }
@@ -42,6 +50,7 @@ class LogIndexer
 
             if ($onlyFile !== null && $onlyFile !== $relativePath && $onlyFile !== $path) {
                 $stats['skipped']++;
+
                 continue;
             }
 
@@ -72,7 +81,12 @@ class LogIndexer
         $previousOffset = (int) ($file->last_offset ?? 0);
         $offset = $fresh ? 0 : $previousOffset;
 
-        if (! $fresh && $file->exists && $size < $previousOffset) {
+        $wasReplaced = $file->exists
+            && $file->inode !== null
+            && $inode !== null
+            && (int) $file->inode !== $inode;
+
+        if (! $fresh && $file->exists && ($size < $previousOffset || $wasReplaced)) {
             $offset = 0;
             $file->was_truncated_at = now();
         }
@@ -141,7 +155,7 @@ class LogIndexer
     }
 
     /**
-     * @param list<string> $seenPaths
+     * @param  list<string>  $seenPaths
      */
     private function markMissingFiles(array $seenPaths): void
     {

@@ -13,9 +13,18 @@
         <p>Dashboard pentru erori, warning-uri și mesaje critice din logurile aplicației.</p>
     </div>
 
-    <div class="theme-switcher" role="group" aria-label="Schimbă tema">
-        <button type="button" class="theme-option" data-theme-value="light">Light</button>
-        <button type="button" class="theme-option" data-theme-value="dark">Dark</button>
+    <div class="header-actions">
+        <button type="button" class="settings-button" data-settings-open title="Setări" aria-label="Deschide setările">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.34.7.65.94.3.24.68.38 1.07.4H21v4h-.09a1.7 1.7 0 0 0-1.51.66Z"></path>
+            </svg>
+        </button>
+
+        <div class="theme-switcher" role="group" aria-label="Schimbă tema">
+            <button type="button" class="theme-option" data-theme-value="light">Light</button>
+            <button type="button" class="theme-option" data-theme-value="dark">Dark</button>
+        </div>
     </div>
 </div>
 
@@ -26,6 +35,117 @@
         </strong>
     </div>
 @endif
+
+@if($errors->has('monitoring'))
+    <div class="monitoring-banner monitoring-banner-danger">
+        {{ $errors->first('monitoring') }}
+    </div>
+@endif
+
+@if(!($monitoring['enabled'] ?? true))
+    <div class="monitoring-banner monitoring-banner-warning">
+        <div>
+            <strong>Monitorizarea este suspendată.</strong>
+            Erorile continuă să fie scrise în logurile aplicației, dar nu sunt indexate în dashboard.
+
+            @if(($monitoring['setting'] ?? null)?->updated_at)
+                <span class="monitoring-meta">
+                    Din {{ $monitoring['setting']->updated_at->format($dateFormat) }}
+                    @if($monitoring['setting']->updated_by_name)
+                        de {{ $monitoring['setting']->updated_by_name }}
+                    @endif
+                </span>
+            @endif
+        </div>
+
+        @if($monitoring['allowed_by_configuration'] ?? false)
+            <button type="button" class="btn btn-primary" data-settings-open>Reactivează</button>
+        @else
+            <span class="configuration-lock">Dezactivată din configurația aplicației</span>
+        @endif
+    </div>
+@endif
+
+<dialog class="settings-dialog" data-settings-dialog>
+    <div class="settings-dialog-header">
+        <div>
+            <h2>Setări Error Log Monitor</h2>
+            <p>Configurează comportamentul monitorului.</p>
+        </div>
+        <button type="button" class="dialog-close" data-settings-close aria-label="Închide">&times;</button>
+    </div>
+
+    <div class="settings-layout">
+        <div class="settings-tabs" role="tablist" aria-label="Grupuri de setări">
+            <button type="button" class="settings-tab is-active" role="tab" aria-selected="true">General</button>
+            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>Indexare</button>
+            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>Notificări</button>
+            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>Retenție</button>
+        </div>
+
+        <div class="settings-panel">
+            <div class="setting-row">
+                <div>
+                    <h3>Monitorizare loguri</h3>
+                    <p>Controlează indexarea erorilor noi. Dashboardul și erorile existente rămân disponibile.</p>
+                </div>
+                <span class="monitoring-status {{ ($monitoring['enabled'] ?? true) ? 'is-enabled' : 'is-disabled' }}">
+                    {{ ($monitoring['enabled'] ?? true) ? 'Activă' : 'Suspendată' }}
+                </span>
+            </div>
+
+            @if(!($monitoring['allowed_by_configuration'] ?? true))
+                <div class="settings-notice">
+                    Monitorizarea este dezactivată prin <code>ERROR_LOG_MONITOR_ENABLED</code> și nu poate fi activată din dashboard.
+                </div>
+            @elseif($monitoring['enabled'] ?? true)
+                <form
+                    method="POST"
+                    action="{{ route('error-log-monitor.settings.monitoring.update') }}"
+                    data-disable-monitoring-form
+                >
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="enabled" value="0">
+
+                    <div class="settings-warning">
+                        După suspendare nu se vor mai adăuga erori în monitor până la reactivare.
+                    </div>
+
+                    <button type="submit" class="btn btn-danger">Suspendă monitorizarea</button>
+                </form>
+            @else
+                <form method="POST" action="{{ route('error-log-monitor.settings.monitoring.update') }}">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="enabled" value="1">
+
+                    <fieldset class="resume-options">
+                        <legend>Cum dorești să reiei monitorizarea?</legend>
+
+                        <label class="resume-option">
+                            <input type="radio" name="resume_mode" value="catch_up" checked>
+                            <span>
+                                <strong>Recuperează erorile disponibile</strong>
+                                <small>Continuă de la ultimul cursor. Unele erori pot lipsi dacă logurile au fost rotite, comprimate sau șterse.</small>
+                            </span>
+                        </label>
+
+                        <label class="resume-option">
+                            <input type="radio" name="resume_mode" value="from_now">
+                            <span>
+                                <strong>Monitorizează doar erorile viitoare</strong>
+                                <small>Ignoră conținutul actual și începe de la finalul fișierelor existente.</small>
+                            </span>
+                        </label>
+                    </fieldset>
+
+                    <button type="submit" class="btn btn-primary">Activează monitorizarea</button>
+                </form>
+            @endif
+        </div>
+    </div>
+</dialog>
 
 <div class="card">
     <form method="GET" action="{{ route('error-log-monitor.dashboard') }}">

@@ -12,9 +12,13 @@ class ErrorLogMonitorServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(
-            __DIR__ . '/../config/error-log-monitor.php',
-            'error-log-monitor'
+        /** @var array<string, mixed> $packageConfig */
+        $packageConfig = require __DIR__.'/../config/error-log-monitor.php';
+        $applicationConfig = config('error-log-monitor', []);
+
+        config()->set(
+            'error-log-monitor',
+            array_replace_recursive($packageConfig, is_array($applicationConfig) ? $applicationConfig : [])
         );
     }
 
@@ -33,17 +37,17 @@ class ErrorLogMonitorServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
     }
 
     private function registerViews(): void
     {
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'error-log-monitor');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'error-log-monitor');
     }
 
     private function registerMigrations(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 
     private function registerCommands(): void
@@ -65,15 +69,15 @@ class ErrorLogMonitorServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__ . '/../config/error-log-monitor.php' => config_path('error-log-monitor.php'),
+            __DIR__.'/../config/error-log-monitor.php' => config_path('error-log-monitor.php'),
         ], 'error-log-monitor-config');
 
         $this->publishes([
-            __DIR__ . '/../resources/views' => resource_path('views/vendor/error-log-monitor'),
+            __DIR__.'/../resources/views' => resource_path('views/vendor/error-log-monitor'),
         ], 'error-log-monitor-views');
 
         $this->publishes([
-            __DIR__ . '/../database/migrations' => database_path('migrations'),
+            __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'error-log-monitor-migrations');
     }
 }
