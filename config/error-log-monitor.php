@@ -62,6 +62,10 @@ return [
         'layout' => null,
     ],
 
+    'features' => [
+        'bulk_actions_enabled' => true,
+    ],
+
     'logs' => [
         'base_path' => storage_path('logs'),
         'include_files' => ['*.log', '**/*.log', '*.log.1', '**/*.log.1'],
@@ -95,6 +99,13 @@ return [
         'general' => [
             'monitoring_enabled' => [
                 'type' => 'boolean',
+                'default' => true,
+            ],
+        ],
+        'dashboard' => [
+            'bulk_actions_enabled' => [
+                'type' => 'boolean',
+                'config' => 'error-log-monitor.features.bulk_actions_enabled',
                 'default' => true,
             ],
         ],

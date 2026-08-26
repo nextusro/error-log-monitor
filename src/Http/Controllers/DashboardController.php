@@ -11,6 +11,7 @@ use Nextus\ErrorLogMonitor\Models\LogFile;
 use Nextus\ErrorLogMonitor\Queries\DashboardIssuesQuery;
 use Nextus\ErrorLogMonitor\Queries\DashboardStatsQuery;
 use Nextus\ErrorLogMonitor\Services\MonitoringState;
+use Nextus\ErrorLogMonitor\Services\SettingStore;
 
 class DashboardController extends Controller
 {
@@ -19,6 +20,7 @@ class DashboardController extends Controller
         DashboardIssuesQuery $issuesQuery,
         DashboardStatsQuery $statsQuery,
         MonitoringState $monitoringState,
+        SettingStore $settings,
     ): View {
         $filters = [
             'level' => $request->query('level'),
@@ -64,6 +66,7 @@ class DashboardController extends Controller
                 'allowed_by_configuration' => $monitoringState->isAllowedByConfiguration(),
                 'setting' => $monitoringState->setting(),
             ],
+            'bulkActionsEnabled' => (bool) $settings->get('dashboard', 'bulk_actions_enabled'),
         ]);
     }
 }

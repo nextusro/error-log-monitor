@@ -100,6 +100,8 @@
         .btn-link:hover { color: var(--text); text-decoration: none; }
         .btn-danger { background: var(--danger); color: #fff; }
         .btn-danger:hover { opacity: .9; }
+        .btn-warning { background: var(--warning); color: #fff; }
+        .btn-warning:hover { opacity: .9; }
 
         .monitoring-banner { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 16px; padding: 14px 16px; border: 1px solid; border-radius: 12px; font-size: 14px; line-height: 1.45; }
         .monitoring-banner-warning { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 35%, transparent); background: var(--warning-soft); }
@@ -120,6 +122,7 @@
         .settings-tab:disabled { opacity: .45; }
         .settings-panel { padding: 22px; }
         .setting-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+        .setting-row-spaced { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
         .setting-row h3 { margin: 0 0 5px; color: var(--text-strong); font-size: 16px; }
         .setting-row p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
         .monitoring-status { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 750; white-space: nowrap; }
@@ -170,6 +173,12 @@
 
         .section-title { margin: 0 0 5px; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-strong); }
         .section-subtitle { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+        .issues-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 5px; }
+        .issues-header .section-title { margin-bottom: 0; }
+        .issues-header form { display: flex; align-items: center; gap: 8px; }
+        .bulk-actions-toolbar[hidden] { display: none; }
+        .col-select { width: 42px; text-align: center; }
+        .col-select input, .mobile-bulk-checkbox { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
 
         .table-wrapper { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
         table { width: 100%; border-collapse: collapse; min-width: 1100px; background: var(--input-bg); }
@@ -634,6 +643,9 @@
             .header-row { flex-direction: column; }
             .header-actions { width: 100%; justify-content: space-between; }
             .monitoring-banner { align-items: flex-start; flex-direction: column; }
+            .issues-header { align-items: stretch; flex-direction: column; margin-bottom: 12px; }
+            .issues-header form { align-items: stretch; flex-direction: column; width: 100%; }
+            .issues-header .btn { width: 100%; }
             .settings-layout { grid-template-columns: 1fr; }
             .settings-tabs { display: flex; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); }
             .settings-tab { width: auto; white-space: nowrap; }
@@ -1205,6 +1217,80 @@
                 target.classList.toggle('is-open');
             }
         });
+
+        (function () {
+            const form = document.querySelector('[data-bulk-actions-form]');
+
+            if (!form) {
+                return;
+            }
+
+            const checkboxes = Array.from(document.querySelectorAll('[data-bulk-issue]'));
+            const selectAll = document.querySelector('[data-bulk-select-all]');
+            const actionButtons = Array.from(form.querySelectorAll('[data-bulk-action-button]'));
+            const counts = Array.from(form.querySelectorAll('[data-bulk-selected-count]'));
+            const hiddenInputs = form.querySelector('[data-bulk-hidden-inputs]');
+
+            function selectedIds() {
+                return [...new Set(
+                    checkboxes
+                        .filter(function (checkbox) { return checkbox.checked; })
+                        .map(function (checkbox) { return checkbox.value; })
+                )];
+            }
+
+            function updateBulkState() {
+                const selected = selectedIds();
+                const available = [...new Set(checkboxes.map(function (checkbox) { return checkbox.value; }))];
+
+                form.hidden = selected.length === 0;
+                actionButtons.forEach(function (button) { button.disabled = selected.length === 0; });
+                counts.forEach(function (count) { count.textContent = String(selected.length); });
+
+                if (selectAll) {
+                    selectAll.checked = available.length > 0 && selected.length === available.length;
+                    selectAll.indeterminate = selected.length > 0 && selected.length < available.length;
+                }
+            }
+
+            checkboxes.forEach(function (checkbox) {
+                checkbox.addEventListener('change', function () {
+                    checkboxes
+                        .filter(function (candidate) { return candidate.value === checkbox.value; })
+                        .forEach(function (candidate) { candidate.checked = checkbox.checked; });
+                    updateBulkState();
+                });
+            });
+
+            if (selectAll) {
+                selectAll.addEventListener('change', function () {
+                    checkboxes.forEach(function (checkbox) { checkbox.checked = selectAll.checked; });
+                    updateBulkState();
+                });
+            }
+
+            form.addEventListener('submit', function (event) {
+                const selected = selectedIds();
+
+                const actionLabel = event.submitter?.getAttribute('data-bulk-action-label') || 'modificate';
+
+                if (selected.length === 0 || !window.confirm('Confirmi marcarea ca ' + actionLabel + ' a issue-urilor selectate?')) {
+                    event.preventDefault();
+                    return;
+                }
+
+                hiddenInputs.replaceChildren();
+                selected.forEach(function (issueId) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'issue_ids[]';
+                    input.value = issueId;
+                    hiddenInputs.appendChild(input);
+                });
+            });
+
+            updateBulkState();
+        })();
 
         document.addEventListener('click', function (event) {
             const dialog = document.querySelector('[data-settings-dialog]');

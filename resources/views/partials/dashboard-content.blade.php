@@ -56,6 +56,7 @@
                     @endif
                 </span>
             @endif
+
         </div>
 
         @if($monitoring['allowed_by_configuration'] ?? false)
@@ -143,6 +144,26 @@
                     <button type="submit" class="btn btn-primary">Activează monitorizarea</button>
                 </form>
             @endif
+
+            <div class="setting-row setting-row-spaced">
+                <div>
+                    <h3>Acțiuni bulk</h3>
+                    <p>Permite marcarea simultană ca rezolvate sau ignorate a issue-urilor deschise.</p>
+                </div>
+                <span class="monitoring-status {{ ($bulkActionsEnabled ?? true) ? 'is-enabled' : 'is-disabled' }}">
+                    {{ ($bulkActionsEnabled ?? true) ? 'Active' : 'Dezactivate' }}
+                </span>
+            </div>
+
+            <form method="POST" action="{{ route('error-log-monitor.settings.bulk-actions.update') }}">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="enabled" value="{{ ($bulkActionsEnabled ?? true) ? '0' : '1' }}">
+
+                <button type="submit" class="btn {{ ($bulkActionsEnabled ?? true) ? 'btn-danger' : 'btn-primary' }}">
+                    {{ ($bulkActionsEnabled ?? true) ? 'Dezactivează acțiunile bulk' : 'Activează acțiunile bulk' }}
+                </button>
+            </form>
         </div>
     </div>
 </dialog>
@@ -368,7 +389,35 @@
 @endif
 
 <div class="card">
-    <h2 class="section-title">Issues</h2>
+    <div class="issues-header">
+        <h2 class="section-title">Issues</h2>
+
+        @if($bulkActionsEnabled ?? true)
+            <form
+                id="bulk-actions-form"
+                method="POST"
+                action="{{ route('error-log-monitor.issues.resolve-bulk') }}"
+                class="bulk-actions-toolbar"
+                data-bulk-actions-form
+                hidden
+            >
+                @csrf
+                <span data-bulk-hidden-inputs></span>
+                <button
+                    type="submit"
+                    class="btn btn-warning"
+                    formaction="{{ route('error-log-monitor.issues.ignore-bulk') }}"
+                    data-bulk-action-button
+                    data-bulk-action-label="ignorate"
+                >
+                    Ignoră selectate (<span data-bulk-selected-count>0</span>)
+                </button>
+                <button type="submit" class="btn btn-primary" data-bulk-action-button data-bulk-action-label="rezolvate">
+                    Rezolvă selectate (<span data-bulk-selected-count>0</span>)
+                </button>
+            </form>
+        @endif
+    </div>
 
     @if($issues->isEmpty())
         <p class="section-subtitle">Nu există erori pentru filtrele selectate.</p>
@@ -382,6 +431,11 @@
             <table>
                 <thead>
                     <tr>
+                        @if($bulkActionsEnabled ?? true)
+                            <th class="col-select">
+                                <input type="checkbox" data-bulk-select-all aria-label="Selectează toate issue-urile deschise de pe pagină">
+                            </th>
+                        @endif
                         <th class="col-level">Level</th>
                         <th class="col-message">Message</th>
                         <th class="col-count">Occurrences</th>
@@ -414,6 +468,18 @@
                         @endphp
 
                         <tr id="issue-{{ $issue->id }}" @class(['issue-row-focused' => $isFocusedIssue])>
+                            @if($bulkActionsEnabled ?? true)
+                                <td class="col-select">
+                                    @if($issue->status === 'open')
+                                        <input
+                                            type="checkbox"
+                                            value="{{ $issue->id }}"
+                                            data-bulk-issue
+                                            aria-label="Selectează issue-ul {{ $issue->id }}"
+                                        >
+                                    @endif
+                                </td>
+                            @endif
                             <td>
                                 <span class="severity-badge {{ $levelClass }}">
                                     {{ strtoupper($issue->level) }}
@@ -528,7 +594,7 @@
 
                         @if($hasDetails)
                             <tr id="{{ $stackRowId }}" class="stack-row" hidden>
-                                <td colspan="8">
+                                <td colspan="{{ ($bulkActionsEnabled ?? true) ? 9 : 8 }}">
                                     <div class="stack-panel">
                                         <pre class="logviewer-message">{{ $issue->last_message ?: $issue->normalized_message }}</pre>
 
@@ -580,6 +646,16 @@
 
                 <div id="issue-{{ $issue->id }}" @class(['issue-card', 'issue-row-focused' => $isFocusedIssue])>
                     <div class="issue-card-top">
+                        @if(($bulkActionsEnabled ?? true) && $issue->status === 'open')
+                            <input
+                                type="checkbox"
+                                class="mobile-bulk-checkbox"
+                                value="{{ $issue->id }}"
+                                data-bulk-issue
+                                aria-label="Selectează issue-ul {{ $issue->id }}"
+                            >
+                        @endif
+
                         <div style="min-width: 0; flex: 1;">
                             <div style="margin-bottom: 10px;">
                                 <span class="severity-badge {{ $levelClass }}">

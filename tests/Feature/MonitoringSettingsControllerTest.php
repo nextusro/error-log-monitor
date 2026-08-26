@@ -42,6 +42,11 @@ class MonitoringSettingsControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('data-settings-dialog', false);
         $response->assertSee('Monitorizare loguri');
+        $response->assertSee('data-bulk-actions-form', false);
+        $response->assertSee('class="bulk-actions-toolbar"', false);
+        $response->assertSee('hidden', false);
+        $response->assertSeeInOrder(['Ignoră selectate', 'Rezolvă selectate']);
+        $this->assertSame(2, substr_count($response->getContent(), '<span data-bulk-selected-count>'));
     }
 
     public function test_settings_blade_templates_compile_independently(): void
@@ -51,5 +56,29 @@ class MonitoringSettingsControllerTest extends TestCase
 
         $this->assertNotEmpty(Blade::compileString($dashboard));
         $this->assertNotEmpty(Blade::compileString($content));
+    }
+
+    public function test_bulk_actions_setting_can_override_the_config_value_without_a_user(): void
+    {
+        config()->set('error-log-monitor.features.bulk_actions_enabled', false);
+
+        $response = $this->put(route('error-log-monitor.settings.bulk-actions.update'), [
+            'enabled' => true,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error-log-monitor.success', 'Acțiunile bulk au fost activate.');
+
+        $setting = Setting::query()
+            ->where('group', 'dashboard')
+            ->where('key', 'bulk_actions_enabled')
+            ->firstOrFail();
+
+        $this->assertTrue($setting->value);
+        $this->assertNull($setting->updated_by_id);
+
+        $this->get(route('error-log-monitor.dashboard'))
+            ->assertOk()
+            ->assertSee('data-bulk-actions-form', false);
     }
 }
