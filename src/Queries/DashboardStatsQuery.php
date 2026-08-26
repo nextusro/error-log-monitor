@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\DB;
 use Nextus\ErrorLogMonitor\Models\LogFile;
 use Nextus\ErrorLogMonitor\Models\LogIssue;
 use Nextus\ErrorLogMonitor\Models\LogOccurrence;
-use Throwable;
+use Nextus\ErrorLogMonitor\Services\DatabaseSize;
 
 class DashboardStatsQuery
 {
+    public function __construct(private readonly DatabaseSize $databaseSize) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -78,7 +80,7 @@ class DashboardStatsQuery
     }
 
     /**
-     * @param list<string> $levels
+     * @param  list<string>  $levels
      */
     private function openIssues(?Carbon $from, array $levels): int
     {
@@ -94,7 +96,7 @@ class DashboardStatsQuery
     }
 
     /**
-     * @param list<string> $levels
+     * @param  list<string>  $levels
      */
     private function newIssues(?Carbon $from, array $levels): int
     {
@@ -109,7 +111,7 @@ class DashboardStatsQuery
     }
 
     /**
-     * @param list<string> $levels
+     * @param  list<string>  $levels
      */
     private function occurrences(?Carbon $from, array $levels): int
     {
@@ -124,7 +126,7 @@ class DashboardStatsQuery
     }
 
     /**
-     * @param list<string> $levels
+     * @param  list<string>  $levels
      */
     private function regressions(?Carbon $from, array $levels): int
     {
@@ -159,7 +161,7 @@ class DashboardStatsQuery
         $issues = LogIssue::query()->count();
         $occurrences = LogOccurrence::query()->count();
         $files = LogFile::query()->count();
-        $sizeBytes = $this->databaseSizeBytes();
+        $sizeBytes = $this->databaseSize->bytes();
 
         return [
             'records' => $issues + $occurrences + $files,
@@ -167,109 +169,12 @@ class DashboardStatsQuery
             'occurrences' => $occurrences,
             'files' => $files,
             'size_bytes' => $sizeBytes,
-            'size_label' => $this->formatBytes($sizeBytes),
+            'size_label' => $this->databaseSize->format($sizeBytes),
         ];
     }
 
-    private function databaseSizeBytes(): ?int
-    {
-        $driver = DB::connection()->getDriverName();
-
-        return match ($driver) {
-            'mysql', 'mariadb' => $this->mysqlTableSizeBytes(),
-            'pgsql' => $this->postgresTableSizeBytes(),
-            'sqlite' => $this->sqliteDatabaseSizeBytes(),
-            default => null,
-        };
-    }
-
-    private function mysqlTableSizeBytes(): ?int
-    {
-        try {
-            $tableNames = [
-                'error_log_monitor_files',
-                'error_log_monitor_issues',
-                'error_log_monitor_occurrences',
-            ];
-
-            $placeholders = implode(',', array_fill(0, count($tableNames), '?'));
-            $row = DB::selectOne(
-                "select sum(data_length + index_length) as size_bytes
-                 from information_schema.tables
-                 where table_schema = database()
-                   and table_name in ($placeholders)",
-                $tableNames,
-            );
-
-            if ($row === null || $row->size_bytes === null) {
-                return null;
-            }
-
-            return (int) $row->size_bytes;
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    private function postgresTableSizeBytes(): ?int
-    {
-        try {
-            $row = DB::selectOne(<<<'SQL'
-                select
-                    pg_total_relation_size('error_log_monitor_files') +
-                    pg_total_relation_size('error_log_monitor_issues') +
-                    pg_total_relation_size('error_log_monitor_occurrences') as size_bytes
-            SQL);
-
-            if ($row === null || $row->size_bytes === null) {
-                return null;
-            }
-
-            return (int) $row->size_bytes;
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    private function sqliteDatabaseSizeBytes(): ?int
-    {
-        $database = DB::connection()->getDatabaseName();
-
-        if (! is_string($database) || $database === ':memory:' || ! is_file($database)) {
-            return null;
-        }
-
-        $size = filesize($database);
-
-        return $size === false ? null : $size;
-    }
-
-    private function formatBytes(?int $bytes): string
-    {
-        if ($bytes === null) {
-            return 'n/a';
-        }
-
-        if ($bytes < 1024) {
-            return $bytes . ' B';
-        }
-
-        $units = ['KB', 'MB', 'GB', 'TB'];
-        $value = $bytes / 1024;
-
-        foreach ($units as $unit) {
-            if ($value < 1024) {
-                return number_format($value, $value >= 10 ? 1 : 2) . ' ' . $unit;
-            }
-
-            $value /= 1024;
-        }
-
-        return number_format($value, 2) . ' PB';
-    }
-
     /**
-     * @param list<string> $levels
+     * @param  list<string>  $levels
      * @return list<array{issue:LogIssue, occurrences:int}>
      */
     private function topIssues(?Carbon $from, array $levels): array
@@ -318,7 +223,7 @@ class DashboardStatsQuery
     }
 
     /**
-     * @param list<string> $levels
+     * @param  list<string>  $levels
      * @return list<array{source:string, occurrences:int}>
      */
     private function topSources(?Carbon $from, array $levels): array

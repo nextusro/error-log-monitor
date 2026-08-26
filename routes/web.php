@@ -12,6 +12,7 @@ use Nextus\ErrorLogMonitor\Http\Controllers\ResolveIssuesController;
 use Nextus\ErrorLogMonitor\Http\Controllers\UpdateBulkActionsSettingController;
 use Nextus\ErrorLogMonitor\Http\Controllers\UpdateLocaleSettingController;
 use Nextus\ErrorLogMonitor\Http\Controllers\UpdateMonitoringStateController;
+use Nextus\ErrorLogMonitor\Http\Controllers\UpdateNotificationSettingsController;
 use Nextus\ErrorLogMonitor\Http\Middleware\SetDashboardLocale;
 
 $routeConfig = config('error-log-monitor.route', []);
@@ -34,4 +35,5 @@ Route::prefix($routeConfig['prefix'] ?? 'admin/error-log-monitor')
         Route::put('/settings/monitoring', UpdateMonitoringStateController::class)->name('settings.monitoring.update');
         Route::put('/settings/bulk-actions', UpdateBulkActionsSettingController::class)->name('settings.bulk-actions.update');
         Route::put('/settings/locale', UpdateLocaleSettingController::class)->name('settings.locale.update');
+        Route::put('/settings/notifications', UpdateNotificationSettingsController::class)->name('settings.notifications.update');
     });

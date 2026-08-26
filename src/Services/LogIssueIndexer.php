@@ -12,9 +12,10 @@ use Nextus\ErrorLogMonitor\Models\LogOccurrence;
 
 class LogIssueIndexer
 {
-    public function __construct(private readonly LogEntryFingerprinter $fingerprinter)
-    {
-    }
+    public function __construct(
+        private readonly LogEntryFingerprinter $fingerprinter,
+        private readonly NotificationManager $notifications,
+    ) {}
 
     public function index(LogFile $file, ParsedLogEntry $entry): LogIssue
     {
@@ -24,6 +25,11 @@ class LogIssueIndexer
 
         /** @var LogIssue $issue */
         $issue = LogIssue::query()->firstOrNew(['fingerprint' => $fingerprint]);
+        $isNew = ! $issue->exists;
+        $isRegression = $issue->exists
+            && $issue->resolved_at !== null
+            && ($issue->last_seen_at === null || $issue->last_seen_at->lte($issue->resolved_at))
+            && $occurredAt->greaterThan($issue->resolved_at);
 
         if (! $issue->exists) {
             $issue->fill([
@@ -64,6 +70,12 @@ class LogIssueIndexer
                 'stack_trace' => $this->limit($entry->stackTrace, (int) config('error-log-monitor.indexing.max_stack_trace_length', 262144)),
                 'occurred_at' => $occurredAt,
             ]);
+        }
+
+        if ($isNew) {
+            $this->notifications->issueCreated($issue);
+        } elseif ($isRegression) {
+            $this->notifications->issueRegressed($issue);
         }
 
         return $issue;

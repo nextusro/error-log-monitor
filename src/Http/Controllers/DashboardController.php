@@ -73,6 +73,14 @@ class DashboardController extends Controller
             'bulkActionsEnabled' => (bool) $settings->get('dashboard', 'bulk_actions_enabled'),
             'dashboardLocale' => app()->getLocale(),
             'dashboardLocales' => config('error-log-monitor.dashboard.locales', []),
+            'notificationSettings' => [
+                'enabled' => (bool) $settings->get('notifications', 'enabled'),
+                'recipients' => $settings->get('notifications', 'recipients'),
+                'regressions_enabled' => (bool) $settings->get('notifications', 'regressions_enabled'),
+                'database_size_enabled' => (bool) $settings->get('notifications', 'database_size_enabled'),
+                'database_size_threshold_mb' => (int) $settings->get('notifications', 'database_size_threshold_mb'),
+                'levels' => $settings->get('notifications', 'levels'),
+            ],
         ]);
     }
 }

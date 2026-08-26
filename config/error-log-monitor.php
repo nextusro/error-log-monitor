@@ -96,6 +96,10 @@ return [
 
     'notifications' => [
         'enabled' => false,
+        'recipients' => [],
+        'regressions_enabled' => true,
+        'database_size_enabled' => true,
+        'database_size_threshold_mb' => 500,
         'levels' => ['critical', 'alert', 'emergency'],
         'cooldown_minutes' => 60,
     ],
@@ -117,6 +121,38 @@ return [
                 'type' => 'boolean',
                 'config' => 'error-log-monitor.features.bulk_actions_enabled',
                 'default' => true,
+            ],
+        ],
+        'notifications' => [
+            'enabled' => [
+                'type' => 'boolean',
+                'config' => 'error-log-monitor.notifications.enabled',
+                'default' => false,
+            ],
+            'recipients' => [
+                'type' => 'array',
+                'config' => 'error-log-monitor.notifications.recipients',
+                'default' => [],
+            ],
+            'regressions_enabled' => [
+                'type' => 'boolean',
+                'config' => 'error-log-monitor.notifications.regressions_enabled',
+                'default' => true,
+            ],
+            'database_size_enabled' => [
+                'type' => 'boolean',
+                'config' => 'error-log-monitor.notifications.database_size_enabled',
+                'default' => true,
+            ],
+            'database_size_threshold_mb' => [
+                'type' => 'integer',
+                'config' => 'error-log-monitor.notifications.database_size_threshold_mb',
+                'default' => 500,
+            ],
+            'levels' => [
+                'type' => 'array',
+                'config' => 'error-log-monitor.notifications.levels',
+                'default' => ['critical', 'alert', 'emergency'],
             ],
         ],
     ],

@@ -88,8 +88,12 @@
 
         .filters { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
         .field label { display: block; font-size: 12px; font-weight: 650; margin-bottom: 6px; color: var(--muted); }
-        .field input, .field select { width: 100%; min-width: 0; border: 1px solid #d8ddea; border-radius: 10px; background: var(--input-bg); color: var(--text); padding: 10px 11px; font-size: 14px; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
-        .field input:focus, .field select:focus { border-color: #aab6d4; box-shadow: 0 0 0 3px var(--focus-ring); }
+        .field input, .field select, .field textarea { width: 100%; min-width: 0; border: 1px solid #d8ddea; border-radius: 10px; background: var(--input-bg); color: var(--text); padding: 10px 11px; font-size: 14px; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+        .field input:focus, .field select:focus, .field textarea:focus { border-color: #aab6d4; box-shadow: 0 0 0 3px var(--focus-ring); }
+        .field textarea { display: block; resize: vertical; }
+        .field small { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+        .field .checkbox-label { display: inline-flex; align-items: center; gap: 9px; margin: 0; color: var(--text-strong); font-size: 14px; cursor: pointer; }
+        .field .checkbox-label input[type="checkbox"] { width: 18px; height: 18px; margin: 0; padding: 0; flex: 0 0 auto; }
 
         .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 10px; padding: 9px 14px; font-size: 14px; font-weight: 650; cursor: pointer; transition: background 0.15s ease, transform 0.05s ease, opacity 0.15s ease; }
@@ -367,7 +371,8 @@
         }
 
         html[data-theme="dark"] .field input,
-        html[data-theme="dark"] .field select {
+        html[data-theme="dark"] .field select,
+        html[data-theme="dark"] .field textarea {
             color-scheme: dark;
         }
 
@@ -1310,6 +1315,19 @@
 
             if (event.target.closest('[data-settings-close]')) {
                 dialog.close();
+            }
+
+            const tab = event.target.closest('[data-settings-tab]');
+            if (tab) {
+                const selected = tab.dataset.settingsTab;
+                dialog.querySelectorAll('[data-settings-tab]').forEach((item) => {
+                    const active = item.dataset.settingsTab === selected;
+                    item.classList.toggle('is-active', active);
+                    item.setAttribute('aria-selected', active ? 'true' : 'false');
+                });
+                dialog.querySelectorAll('[data-settings-panel]').forEach((panel) => {
+                    panel.hidden = panel.dataset.settingsPanel !== selected;
+                });
             }
         });
 

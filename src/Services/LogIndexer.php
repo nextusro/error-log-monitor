@@ -15,6 +15,7 @@ class LogIndexer
         private readonly LaravelLogParser $parser,
         private readonly LogIssueIndexer $issueIndexer,
         private readonly MonitoringState $monitoringState,
+        private readonly NotificationManager $notifications,
     ) {}
 
     /**
@@ -61,6 +62,7 @@ class LogIndexer
         }
 
         $this->markMissingFiles($seenPaths);
+        $this->notifications->checkDatabaseSize();
 
         return $stats;
     }

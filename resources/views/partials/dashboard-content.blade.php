@@ -78,13 +78,13 @@
 
     <div class="settings-layout">
         <div class="settings-tabs" role="tablist" aria-label="{{ __('error-log-monitor::messages.settings.groups') }}">
-            <button type="button" class="settings-tab is-active" role="tab" aria-selected="true">{{ __('error-log-monitor::messages.settings.general') }}</button>
+            <button type="button" class="settings-tab is-active" role="tab" aria-selected="true" data-settings-tab="general">{{ __('error-log-monitor::messages.settings.general') }}</button>
             <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>{{ __('error-log-monitor::messages.settings.indexing') }}</button>
-            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>{{ __('error-log-monitor::messages.settings.notifications') }}</button>
+            <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="notifications">{{ __('error-log-monitor::messages.settings.notifications') }}</button>
             <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>{{ __('error-log-monitor::messages.settings.retention') }}</button>
         </div>
 
-        <div class="settings-panel">
+        <div class="settings-panel" data-settings-panel="general">
             <div class="setting-row">
                 <div>
                     <h3>{{ __('error-log-monitor::messages.settings.monitoring') }}</h3>
@@ -184,6 +184,67 @@
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.settings.save_language') }}</button>
+            </form>
+        </div>
+
+        <div class="settings-panel" data-settings-panel="notifications" hidden>
+            <form method="POST" action="{{ route('error-log-monitor.settings.notifications.update') }}">
+                @csrf
+                @method('PUT')
+
+                <input type="hidden" name="enabled" value="0">
+                <input type="hidden" name="regressions_enabled" value="0">
+                <input type="hidden" name="database_size_enabled" value="0">
+
+                <div class="field" style="margin-bottom: 18px;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="enabled" value="1" @checked(old('enabled', $notificationSettings['enabled']))>
+                        {{ __('error-log-monitor::messages.notifications.enabled') }}
+                    </label>
+                </div>
+
+                <div class="field" style="margin-bottom: 18px;">
+                    <label for="notification-recipients">{{ __('error-log-monitor::messages.notifications.recipients') }}</label>
+                    <textarea id="notification-recipients" name="recipients" rows="4" placeholder="admin@example.com">{{ old('recipients', implode("\n", $notificationSettings['recipients'] ?? [])) }}</textarea>
+                    <small>{{ __('error-log-monitor::messages.notifications.recipients_help') }}</small>
+                    @error('recipients')<div class="settings-warning">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="setting-row">
+                    <div>
+                        <h3>{{ __('error-log-monitor::messages.notifications.regressions') }}</h3>
+                        <p>{{ __('error-log-monitor::messages.notifications.regressions_help') }}</p>
+                    </div>
+                    <input type="checkbox" name="regressions_enabled" value="1" @checked(old('regressions_enabled', $notificationSettings['regressions_enabled']))>
+                </div>
+
+                <div class="setting-row setting-row-spaced">
+                    <div>
+                        <h3>{{ __('error-log-monitor::messages.notifications.database_size') }}</h3>
+                        <p>{{ __('error-log-monitor::messages.notifications.database_size_help') }}</p>
+                    </div>
+                    <input type="checkbox" name="database_size_enabled" value="1" @checked(old('database_size_enabled', $notificationSettings['database_size_enabled']))>
+                </div>
+
+                <div class="field" style="max-width: 240px; margin-bottom: 18px;">
+                    <label for="database-size-threshold">{{ __('error-log-monitor::messages.notifications.threshold_mb') }}</label>
+                    <input id="database-size-threshold" type="number" min="1" name="database_size_threshold_mb" value="{{ old('database_size_threshold_mb', $notificationSettings['database_size_threshold_mb']) }}">
+                    @error('database_size_threshold_mb')<div class="settings-warning">{{ $message }}</div>@enderror
+                </div>
+
+                <fieldset class="resume-options" style="margin-bottom: 18px;">
+                    <legend>{{ __('error-log-monitor::messages.notifications.levels') }}</legend>
+                    @foreach($levels as $level)
+                        <label class="resume-option">
+                            <input type="checkbox" name="levels[]" value="{{ $level }}" @checked(in_array($level, old('levels', $notificationSettings['levels'] ?? []), true))>
+                            <span><strong>{{ strtoupper($level) }}</strong></span>
+                        </label>
+                    @endforeach
+                </fieldset>
+
+                @error('levels')<div class="settings-warning">{{ $message }}</div>@enderror
+
+                <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.notifications.save') }}</button>
             </form>
         </div>
     </div>
