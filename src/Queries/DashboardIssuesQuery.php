@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Nextus\ErrorLogMonitor\Models\LogIssue;
+use Nextus\ErrorLogMonitor\Services\SettingStore;
 
 class DashboardIssuesQuery
 {
@@ -59,7 +60,7 @@ class DashboardIssuesQuery
 
     private function applyIntervalFilter(Builder $query, Request $request): void
     {
-        $interval = $request->query('interval', config('error-log-monitor.dashboard.default_interval', '24h'));
+        $interval = $request->query('interval', app(SettingStore::class)->get('dashboard', 'default_interval'));
 
         if (! is_string($interval) || $interval === '' || $interval === 'all') {
             return;
@@ -161,7 +162,7 @@ class DashboardIssuesQuery
 
     private function perPage(Request $request): int
     {
-        $perPage = (int) $request->query('per_page', config('error-log-monitor.dashboard.per_page', 50));
+        $perPage = (int) $request->query('per_page', app(SettingStore::class)->get('dashboard', 'per_page'));
 
         return min(max($perPage, 1), 200);
     }

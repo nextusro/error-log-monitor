@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Nextus\ErrorLogMonitor\Services;
 
 use Illuminate\Support\Carbon;
+use Nextus\ErrorLogMonitor\Models\IndexRun;
 use Nextus\ErrorLogMonitor\Models\LogFile;
 use SplFileObject;
+use Throwable;
 
 class LogIndexer
 {
@@ -28,47 +30,108 @@ class LogIndexer
         }
 
         $startedAt = microtime(true);
-        $maxRuntime = (int) config('error-log-monitor.indexing.max_runtime_seconds', 30);
-        $maxFiles = (int) config('error-log-monitor.indexing.max_files_per_run', 50);
-        $maxLines = (int) config('error-log-monitor.indexing.max_lines_per_file', 5000);
+        $settings = app(SettingStore::class);
+        $maxRuntime = max(5, (int) $settings->get('indexing', 'max_runtime_seconds'));
+        $maxFiles = max(1, (int) $settings->get('indexing', 'max_files_per_run'));
+        $maxLines = max(100, (int) $settings->get('indexing', 'max_lines_per_file'));
         $basePath = rtrim((string) config('error-log-monitor.logs.base_path', storage_path('logs')), DIRECTORY_SEPARATOR);
 
         $paths = $this->discovery->discover();
-        $seenPaths = [];
-        $stats = ['files' => 0, 'entries' => 0, 'issues' => 0, 'skipped' => 0];
+        $priorityPaths = $onlyFile === null ? $this->priorityPaths($paths, $basePath) : [];
+        $orderedPaths = $this->orderedPaths($paths, $priorityPaths, $onlyFile, $fresh);
+        $stats = [
+            'files' => 0, 'entries' => 0, 'issues' => 0, 'skipped' => 0,
+            'discovered_files' => count($paths), 'pending_files' => 0,
+            'partially_processed_files' => 0, 'failed_files' => 0,
+            'processed_lines' => 0, 'completed' => true, 'stop_reason' => null,
+        ];
+        $errors = [];
+        $endCursor = null;
+        $startCursor = isset($orderedPaths[0]) ? $this->discovery->relativePath($basePath, $orderedPaths[0]) : null;
 
-        foreach ($paths as $path) {
+        foreach ($orderedPaths as $path) {
             if (! $this->monitoringState->isEnabled()) {
+                $stats['completed'] = false;
+                $stats['stop_reason'] = 'monitoring_disabled';
                 break;
             }
 
-            if ($stats['files'] >= $maxFiles || (microtime(true) - $startedAt) >= $maxRuntime) {
+            if ($stats['files'] >= $maxFiles) {
+                $stats['completed'] = false;
+                $stats['stop_reason'] = 'file_limit';
+                break;
+            }
+
+            if ((microtime(true) - $startedAt) >= $maxRuntime) {
+                $stats['completed'] = false;
+                $stats['stop_reason'] = 'runtime_limit';
                 break;
             }
 
             $relativePath = $this->discovery->relativePath($basePath, $path);
-            $seenPaths[] = $path;
-
-            if ($onlyFile !== null && $onlyFile !== $relativePath && $onlyFile !== $path) {
-                $stats['skipped']++;
-
-                continue;
+            if (! in_array($path, $priorityPaths, true)) {
+                $endCursor = $relativePath;
             }
 
-            $result = $this->indexFile($path, $relativePath, $fresh, $maxLines);
+            try {
+                $result = $this->indexFile($path, $relativePath, $fresh, $maxLines);
+                $stats['entries'] += $result['entries'];
+                $stats['issues'] += $result['issues'];
+                $stats['processed_lines'] += $result['lines'];
+
+                if ($result['partial']) {
+                    $stats['partially_processed_files']++;
+                }
+            } catch (Throwable $exception) {
+                $stats['failed_files']++;
+                $errors[] = ['file' => $relativePath, 'message' => $exception->getMessage()];
+            }
+
             $stats['files']++;
-            $stats['entries'] += $result['entries'];
-            $stats['issues'] += $result['issues'];
         }
 
-        $this->markMissingFiles($seenPaths);
+        $stats['pending_files'] = max(0, count($orderedPaths) - $stats['files']);
+
+        if ($stats['failed_files'] > 0) {
+            $stats['completed'] = false;
+            $stats['stop_reason'] = 'read_error';
+        } elseif ($stats['partially_processed_files'] > 0 && $stats['stop_reason'] === null) {
+            $stats['completed'] = false;
+            $stats['stop_reason'] = 'line_limit';
+        }
+
+        $this->markMissingFiles($paths);
+
+        if ($onlyFile === null) {
+            $run = IndexRun::query()->create([
+                'started_at' => Carbon::createFromTimestamp($startedAt),
+                'finished_at' => now(),
+                'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                'status' => $stats['completed'] ? 'completed' : ($stats['failed_files'] > 0 ? 'failed' : 'partial'),
+                'stop_reason' => $stats['stop_reason'],
+                'discovered_files' => $stats['discovered_files'],
+                'processed_files' => $stats['files'],
+                'pending_files' => $stats['pending_files'],
+                'partially_processed_files' => $stats['partially_processed_files'],
+                'failed_files' => $stats['failed_files'],
+                'processed_lines' => $stats['processed_lines'],
+                'parsed_entries' => $stats['entries'],
+                'indexed_issues' => $stats['issues'],
+                'start_cursor' => $startCursor,
+                'end_cursor' => $endCursor,
+                'errors' => $errors !== [] ? $errors : null,
+            ]);
+
+            $this->notifications->checkIndexingHealth($run);
+        }
+
         $this->notifications->checkDatabaseSize();
 
         return $stats;
     }
 
     /**
-     * @return array{entries:int,issues:int}
+     * @return array{entries:int,issues:int,lines:int,partial:bool}
      */
     private function indexFile(string $path, string $relativePath, bool $fresh, int $maxLines): array
     {
@@ -122,7 +185,83 @@ class LogIndexer
             $indexed++;
         }
 
-        return ['entries' => count($entries), 'issues' => $indexed];
+        return [
+            'entries' => count($entries),
+            'issues' => $indexed,
+            'lines' => count($lines['lines']),
+            'partial' => $lines['offset'] < $size,
+        ];
+    }
+
+    /**
+     * @param  list<string>  $paths
+     * @param  list<string>  $priorityPaths
+     * @return list<string>
+     */
+    private function orderedPaths(array $paths, array $priorityPaths, ?string $onlyFile, bool $fresh): array
+    {
+        if ($onlyFile !== null) {
+            return array_values(array_filter($paths, function (string $path) use ($onlyFile): bool {
+                $basePath = (string) config('error-log-monitor.logs.base_path', storage_path('logs'));
+
+                return $path === $onlyFile || $this->discovery->relativePath($basePath, $path) === $onlyFile;
+            }));
+        }
+
+        $regularPaths = array_values(array_diff($paths, $priorityPaths));
+
+        if ($fresh || $regularPaths === []) {
+            return array_values(array_merge($priorityPaths, $regularPaths));
+        }
+
+        $lastCursor = IndexRun::query()->whereNotNull('end_cursor')->latest('id')->value('end_cursor');
+
+        if (! is_string($lastCursor)) {
+            return array_values(array_merge($priorityPaths, $regularPaths));
+        }
+
+        $basePath = (string) config('error-log-monitor.logs.base_path', storage_path('logs'));
+        $cursorIndex = array_search($lastCursor, array_map(
+            fn (string $path): string => $this->discovery->relativePath($basePath, $path),
+            $regularPaths,
+        ), true);
+
+        if ($cursorIndex === false) {
+            return array_values(array_merge($priorityPaths, $regularPaths));
+        }
+
+        $nextIndex = ($cursorIndex + 1) % count($regularPaths);
+        $rotatedPaths = array_merge(
+            array_slice($regularPaths, $nextIndex),
+            array_slice($regularPaths, 0, $nextIndex),
+        );
+
+        return array_values(array_merge($priorityPaths, $rotatedPaths));
+    }
+
+    /**
+     * @param  list<string>  $paths
+     * @return list<string>
+     */
+    private function priorityPaths(array $paths, string $basePath): array
+    {
+        $patterns = config('error-log-monitor.indexing.priority_files', ['laravel.log']);
+
+        if (! is_array($patterns)) {
+            return [];
+        }
+
+        return array_values(array_filter($paths, function (string $path) use ($basePath, $patterns): bool {
+            $relativePath = $this->discovery->relativePath($basePath, $path);
+
+            foreach ($patterns as $pattern) {
+                if (is_string($pattern) && ($relativePath === $pattern || fnmatch($pattern, $relativePath))) {
+                    return true;
+                }
+            }
+
+            return false;
+        }));
     }
 
     /**

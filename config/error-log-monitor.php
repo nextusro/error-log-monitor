@@ -78,6 +78,7 @@ return [
     ],
 
     'indexing' => [
+        'priority_files' => ['laravel.log'],
         'max_files_per_run' => 50,
         'max_lines_per_file' => 5000,
         'max_runtime_seconds' => 30,
@@ -85,6 +86,12 @@ return [
         'max_message_length' => 65535,
         'max_context_length' => 65535,
         'max_stack_trace_length' => 262144,
+        'incomplete_notification_enabled' => true,
+        'incomplete_notification_mode' => 'stale',
+        'stale_after_minutes' => 15,
+        'notification_cooldown_minutes' => 60,
+        'recovery_notification_enabled' => true,
+        'run_history_days' => 30,
     ],
 
     'retention' => [
@@ -122,6 +129,28 @@ return [
                 'config' => 'error-log-monitor.features.bulk_actions_enabled',
                 'default' => true,
             ],
+            'per_page' => ['type' => 'integer', 'config' => 'error-log-monitor.dashboard.per_page', 'default' => 50],
+            'default_interval' => ['type' => 'string', 'config' => 'error-log-monitor.dashboard.default_interval', 'default' => '24h'],
+            'date_format' => ['type' => 'string', 'config' => 'error-log-monitor.dashboard.date_format', 'default' => 'd.m.Y H:i:s'],
+            'statistics_collapsed_by_default' => ['type' => 'boolean', 'config' => 'error-log-monitor.dashboard.statistics_collapsed_by_default', 'default' => false],
+            'default_theme' => ['type' => 'string', 'config' => 'error-log-monitor.dashboard.default_theme', 'default' => 'light'],
+        ],
+        'indexing' => [
+            'max_runtime_seconds' => ['type' => 'integer', 'config' => 'error-log-monitor.indexing.max_runtime_seconds', 'default' => 30],
+            'max_files_per_run' => ['type' => 'integer', 'config' => 'error-log-monitor.indexing.max_files_per_run', 'default' => 50],
+            'max_lines_per_file' => ['type' => 'integer', 'config' => 'error-log-monitor.indexing.max_lines_per_file', 'default' => 5000],
+            'incomplete_notification_enabled' => ['type' => 'boolean', 'config' => 'error-log-monitor.indexing.incomplete_notification_enabled', 'default' => true],
+            'incomplete_notification_mode' => ['type' => 'string', 'config' => 'error-log-monitor.indexing.incomplete_notification_mode', 'default' => 'stale'],
+            'stale_after_minutes' => ['type' => 'integer', 'config' => 'error-log-monitor.indexing.stale_after_minutes', 'default' => 15],
+            'notification_cooldown_minutes' => ['type' => 'integer', 'config' => 'error-log-monitor.indexing.notification_cooldown_minutes', 'default' => 60],
+            'recovery_notification_enabled' => ['type' => 'boolean', 'config' => 'error-log-monitor.indexing.recovery_notification_enabled', 'default' => true],
+            'run_history_days' => ['type' => 'integer', 'config' => 'error-log-monitor.indexing.run_history_days', 'default' => 30],
+        ],
+        'retention' => [
+            'occurrences_days' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.occurrences_days', 'default' => 30],
+            'resolved_issues_days' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.resolved_issues_days', 'default' => 60],
+            'ignored_issues_days' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.ignored_issues_days', 'default' => 60],
+            'open_issues_days' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.open_issues_days', 'default' => 0],
         ],
         'notifications' => [
             'enabled' => [
@@ -153,6 +182,11 @@ return [
                 'type' => 'array',
                 'config' => 'error-log-monitor.notifications.levels',
                 'default' => ['critical', 'alert', 'emergency'],
+            ],
+            'cooldown_minutes' => [
+                'type' => 'integer',
+                'config' => 'error-log-monitor.notifications.cooldown_minutes',
+                'default' => 60,
             ],
         ],
     ],

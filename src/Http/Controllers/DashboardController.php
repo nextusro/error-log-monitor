@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 use Nextus\ErrorLogMonitor\Models\LogFile;
+use Nextus\ErrorLogMonitor\Models\IndexRun;
 use Nextus\ErrorLogMonitor\Queries\DashboardIssuesQuery;
 use Nextus\ErrorLogMonitor\Queries\DashboardStatsQuery;
 use Nextus\ErrorLogMonitor\Services\MonitoringState;
@@ -24,7 +25,7 @@ class DashboardController extends Controller
     ): View {
         $filters = [
             'level' => $request->query('level'),
-            'interval' => $request->query('interval', config('error-log-monitor.dashboard.default_interval', '24h')),
+            'interval' => $request->query('interval', $settings->get('dashboard', 'default_interval')),
             'query' => $request->query('query'),
             'file' => $request->query('file'),
             'directory' => $request->query('directory'),
@@ -49,6 +50,19 @@ class DashboardController extends Controller
             ->values();
 
         $statistics = $statsQuery->build($request);
+        $settingDetails = static fn (string $group, string $key): array => [
+            'value' => $settings->get($group, $key),
+            'configured' => $settings->configuredValue($group, $key),
+            'overridden' => $settings->hasOverride($group, $key),
+        ];
+        $indexingKeys = [
+            'max_runtime_seconds', 'max_files_per_run', 'max_lines_per_file',
+            'incomplete_notification_enabled', 'incomplete_notification_mode',
+            'stale_after_minutes', 'notification_cooldown_minutes',
+            'recovery_notification_enabled', 'run_history_days',
+        ];
+        $retentionKeys = ['occurrences_days', 'resolved_issues_days', 'ignored_issues_days', 'open_issues_days'];
+        $latestIndexRun = IndexRun::query()->latest('id')->first();
 
         return view('error-log-monitor::dashboard', [
             'issues' => $issues,
@@ -62,9 +76,9 @@ class DashboardController extends Controller
             'files' => $files,
             'directories' => $directories,
             'filters' => $filters,
-            'dateFormat' => config('error-log-monitor.dashboard.date_format', 'Y-m-d H:i:s'),
-            'statisticsCollapsedByDefault' => (bool) config('error-log-monitor.dashboard.statistics_collapsed_by_default', false),
-            'defaultTheme' => config('error-log-monitor.dashboard.default_theme', 'light'),
+            'dateFormat' => (string) $settings->get('dashboard', 'date_format'),
+            'statisticsCollapsedByDefault' => (bool) $settings->get('dashboard', 'statistics_collapsed_by_default'),
+            'defaultTheme' => (string) $settings->get('dashboard', 'default_theme'),
             'monitoring' => [
                 'enabled' => $monitoringState->isEnabled(),
                 'allowed_by_configuration' => $monitoringState->isAllowedByConfiguration(),
@@ -73,6 +87,9 @@ class DashboardController extends Controller
             'bulkActionsEnabled' => (bool) $settings->get('dashboard', 'bulk_actions_enabled'),
             'dashboardLocale' => app()->getLocale(),
             'dashboardLocales' => config('error-log-monitor.dashboard.locales', []),
+            'dashboardSettings' => collect(['per_page', 'default_interval', 'date_format', 'statistics_collapsed_by_default', 'default_theme'])
+                ->mapWithKeys(static fn (string $key): array => [$key => $settingDetails('dashboard', $key)])
+                ->all(),
             'notificationSettings' => [
                 'enabled' => (bool) $settings->get('notifications', 'enabled'),
                 'recipients' => $settings->get('notifications', 'recipients'),
@@ -80,6 +97,19 @@ class DashboardController extends Controller
                 'database_size_enabled' => (bool) $settings->get('notifications', 'database_size_enabled'),
                 'database_size_threshold_mb' => (int) $settings->get('notifications', 'database_size_threshold_mb'),
                 'levels' => $settings->get('notifications', 'levels'),
+                'cooldown_minutes' => (int) $settings->get('notifications', 'cooldown_minutes'),
+            ],
+            'indexingSettings' => collect($indexingKeys)->mapWithKeys(
+                static fn (string $key): array => [$key => $settingDetails('indexing', $key)]
+            )->all(),
+            'retentionSettings' => collect($retentionKeys)->mapWithKeys(
+                static fn (string $key): array => [$key => $settingDetails('retention', $key)]
+            )->all(),
+            'indexingHealth' => [
+                'latest' => $latestIndexRun,
+                'recent' => IndexRun::query()->latest('id')->limit(10)->get(),
+                'partial_runs_24h' => IndexRun::query()->where('started_at', '>=', now()->subDay())->where('status', '!=', 'completed')->count(),
+                'oldest_scan_at' => LogFile::query()->where('is_missing', false)->min('last_scanned_at'),
             ],
         ]);
     }

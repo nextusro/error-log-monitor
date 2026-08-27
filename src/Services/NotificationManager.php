@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Nextus\ErrorLogMonitor\Services;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Nextus\ErrorLogMonitor\Models\LogIssue;
+use Nextus\ErrorLogMonitor\Models\IndexRun;
 use Nextus\ErrorLogMonitor\Models\NotificationState;
 use Nextus\ErrorLogMonitor\Notifications\DatabaseSizeExceededNotification;
 use Nextus\ErrorLogMonitor\Notifications\IssueNotification;
+use Nextus\ErrorLogMonitor\Notifications\IndexingHealthNotification;
 
 class NotificationManager
 {
@@ -65,7 +68,7 @@ class NotificationManager
             return;
         }
 
-        $cooldownMinutes = max(0, (int) config('error-log-monitor.notifications.cooldown_minutes', 60));
+        $cooldownMinutes = max(0, (int) $this->settings->get('notifications', 'cooldown_minutes'));
         $cooldownElapsed = $state->last_notified_at === null
             || $state->last_notified_at->lte(now()->subMinutes($cooldownMinutes));
 
@@ -85,6 +88,72 @@ class NotificationManager
             'notification_count' => $state->notification_count + 1,
             'metadata' => ['size_bytes' => $sizeBytes, 'threshold_mb' => $thresholdMb],
         ]);
+    }
+
+    public function checkIndexingHealth(IndexRun $run): void
+    {
+        if (! (bool) $this->settings->get('indexing', 'incomplete_notification_enabled')) {
+            return;
+        }
+
+        $state = NotificationState::query()->firstOrCreate(
+            ['state_key' => 'indexing-health'],
+            ['type' => 'indexing_health', 'metadata' => []],
+        );
+
+        if ($run->status === 'completed') {
+            if ($state->active && $this->canNotify() && (bool) $this->settings->get('indexing', 'recovery_notification_enabled')) {
+                $this->sendIndexingHealth($run, true);
+            }
+
+            $state->update(['active' => false, 'metadata' => ['recovered_at' => now()->toIso8601String()]]);
+
+            return;
+        }
+
+        $metadata = is_array($state->metadata) ? $state->metadata : [];
+        $firstDetectedAt = isset($metadata['first_detected_at'])
+            ? Carbon::parse($metadata['first_detected_at'])
+            : now();
+        $mode = (string) $this->settings->get('indexing', 'incomplete_notification_mode');
+        $staleMinutes = max(1, (int) $this->settings->get('indexing', 'stale_after_minutes'));
+        $shouldNotify = $mode === 'immediate' || $firstDetectedAt->lte(now()->subMinutes($staleMinutes));
+        $cooldownMinutes = max(0, (int) $this->settings->get('indexing', 'notification_cooldown_minutes'));
+        $cooldownElapsed = $state->last_notified_at === null
+            || $state->last_notified_at->lte(now()->subMinutes($cooldownMinutes));
+
+        $state->update([
+            'active' => $state->active || $shouldNotify,
+            'metadata' => [
+                'first_detected_at' => $firstDetectedAt->toIso8601String(),
+                'run_id' => $run->id,
+                'pending_files' => $run->pending_files,
+                'partial_files' => $run->partially_processed_files,
+                'failed_files' => $run->failed_files,
+            ],
+        ]);
+
+        if ($shouldNotify && $cooldownElapsed && $this->canNotify()) {
+            $this->sendIndexingHealth($run, false);
+            $state->update([
+                'active' => true,
+                'last_notified_at' => now(),
+                'notification_count' => $state->notification_count + 1,
+            ]);
+        }
+    }
+
+    private function sendIndexingHealth(IndexRun $run, bool $recovered): void
+    {
+        Notification::route('mail', $this->recipients())->notify(new IndexingHealthNotification(
+            recovered: $recovered,
+            processedFiles: (int) $run->processed_files,
+            discoveredFiles: (int) $run->discovered_files,
+            pendingFiles: (int) $run->pending_files,
+            partialFiles: (int) $run->partially_processed_files,
+            failedFiles: (int) $run->failed_files,
+            reason: $run->stop_reason,
+        ));
     }
 
     private function sendIssue(LogIssue $issue, string $event, string $stateKey): void

@@ -37,6 +37,16 @@ class IndexErrorLogsCommand extends Command
             $stats['skipped'],
         ));
 
+        if (($stats['completed'] ?? true) === false) {
+            $this->warn(sprintf(
+                'Indexing is incomplete (%s): %d pending, %d partial and %d failed files.',
+                $stats['stop_reason'] ?? 'unknown',
+                $stats['pending_files'] ?? 0,
+                $stats['partially_processed_files'] ?? 0,
+                $stats['failed_files'] ?? 0,
+            ));
+        }
+
         return self::SUCCESS;
     }
 }

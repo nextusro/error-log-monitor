@@ -79,9 +79,53 @@
     <div class="settings-layout">
         <div class="settings-tabs" role="tablist" aria-label="{{ __('error-log-monitor::messages.settings.groups') }}">
             <button type="button" class="settings-tab is-active" role="tab" aria-selected="true" data-settings-tab="general">{{ __('error-log-monitor::messages.settings.general') }}</button>
-            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>{{ __('error-log-monitor::messages.settings.indexing') }}</button>
+            <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="indexing">{{ __('error-log-monitor::messages.settings.indexing') }}</button>
             <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="notifications">{{ __('error-log-monitor::messages.settings.notifications') }}</button>
-            <button type="button" class="settings-tab" role="tab" aria-selected="false" disabled>{{ __('error-log-monitor::messages.settings.retention') }}</button>
+            <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="retention">{{ __('error-log-monitor::messages.settings.retention') }}</button>
+        </div>
+
+        <div class="settings-panel" data-settings-panel="indexing" hidden>
+            <form method="POST" action="{{ route('error-log-monitor.settings.indexing.update') }}">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="incomplete_notification_enabled" value="0">
+                <input type="hidden" name="recovery_notification_enabled" value="0">
+
+                @foreach([
+                    'max_runtime_seconds' => [5, 3600],
+                    'max_files_per_run' => [1, 10000],
+                    'max_lines_per_file' => [100, 1000000],
+                    'stale_after_minutes' => [1, 1440],
+                    'notification_cooldown_minutes' => [0, 10080],
+                    'run_history_days' => [1, 3650],
+                ] as $key => [$min, $max])
+                    <div class="field" style="margin-bottom: 14px;">
+                        <label for="indexing-{{ $key }}">{{ __('error-log-monitor::messages.settings.'.$key) }}</label>
+                        <input id="indexing-{{ $key }}" type="number" name="{{ $key }}" min="{{ $min }}" max="{{ $max }}" value="{{ old($key, $indexingSettings[$key]['value']) }}">
+                        <small>{{ __('error-log-monitor::messages.settings.configured_value', ['value' => $indexingSettings[$key]['configured']]) }} @if($indexingSettings[$key]['overridden']) · {{ __('error-log-monitor::messages.settings.overridden') }} @endif</small>
+                        @error($key)<div class="settings-warning">{{ $message }}</div>@enderror
+                    </div>
+                @endforeach
+
+                <div class="field" style="margin-bottom: 14px;">
+                    <label for="incomplete-notification-mode">{{ __('error-log-monitor::messages.settings.incomplete_notification_mode') }}</label>
+                    <select id="incomplete-notification-mode" name="incomplete_notification_mode">
+                        <option value="immediate" @selected(old('incomplete_notification_mode', $indexingSettings['incomplete_notification_mode']['value']) === 'immediate')>{{ __('error-log-monitor::messages.settings.notification_immediate') }}</option>
+                        <option value="stale" @selected(old('incomplete_notification_mode', $indexingSettings['incomplete_notification_mode']['value']) === 'stale')>{{ __('error-log-monitor::messages.settings.notification_stale') }}</option>
+                    </select>
+                </div>
+
+                <label class="checkbox-label" style="margin-bottom: 14px;"><input type="checkbox" name="incomplete_notification_enabled" value="1" @checked(old('incomplete_notification_enabled', $indexingSettings['incomplete_notification_enabled']['value']))> {{ __('error-log-monitor::messages.settings.incomplete_notification_enabled') }}</label>
+                <label class="checkbox-label" style="margin-bottom: 18px;"><input type="checkbox" name="recovery_notification_enabled" value="1" @checked(old('recovery_notification_enabled', $indexingSettings['recovery_notification_enabled']['value']))> {{ __('error-log-monitor::messages.settings.recovery_notification_enabled') }}</label>
+                <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.settings.save_indexing') }}</button>
+            </form>
+
+            <form method="POST" action="{{ route('error-log-monitor.settings.override.destroy') }}" style="margin-top: 12px;">
+                @csrf
+                @method('DELETE')
+                <input type="hidden" name="group" value="indexing"><input type="hidden" name="key" value="*">
+                <button type="submit" class="btn">{{ __('error-log-monitor::messages.settings.reset_to_config') }}</button>
+            </form>
         </div>
 
         <div class="settings-panel" data-settings-panel="general">
@@ -185,6 +229,20 @@
                 </div>
                 <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.settings.save_language') }}</button>
             </form>
+
+            <div class="setting-row setting-row-spaced"><div><h3>{{ __('error-log-monitor::messages.settings.dashboard_preferences') }}</h3><p>{{ __('error-log-monitor::messages.settings.dashboard_preferences_description') }}</p></div></div>
+            <form method="POST" action="{{ route('error-log-monitor.settings.dashboard.update') }}">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="statistics_collapsed_by_default" value="0">
+                <div class="field" style="margin-bottom: 14px;"><label for="dashboard-per-page">{{ __('error-log-monitor::messages.settings.per_page') }}</label><input id="dashboard-per-page" type="number" min="1" max="200" name="per_page" value="{{ old('per_page', $dashboardSettings['per_page']['value']) }}"></div>
+                <div class="field" style="margin-bottom: 14px;"><label for="dashboard-default-interval">{{ __('error-log-monitor::messages.settings.default_interval') }}</label><select id="dashboard-default-interval" name="default_interval">@foreach($intervals as $value => $label)<option value="{{ $value }}" @selected(old('default_interval', $dashboardSettings['default_interval']['value']) === $value)>{{ $label }}</option>@endforeach</select></div>
+                <div class="field" style="margin-bottom: 14px;"><label for="dashboard-date-format">{{ __('error-log-monitor::messages.settings.date_format') }}</label><select id="dashboard-date-format" name="date_format">@foreach(['d.m.Y H:i:s', 'Y-m-d H:i:s', 'd/m/Y H:i:s'] as $format)<option value="{{ $format }}" @selected(old('date_format', $dashboardSettings['date_format']['value']) === $format)>{{ now()->format($format) }}</option>@endforeach</select></div>
+                <div class="field" style="margin-bottom: 14px;"><label for="dashboard-theme">{{ __('error-log-monitor::messages.settings.default_theme') }}</label><select id="dashboard-theme" name="default_theme"><option value="light" @selected(old('default_theme', $dashboardSettings['default_theme']['value']) === 'light')>{{ __('error-log-monitor::messages.settings.theme_light') }}</option><option value="dark" @selected(old('default_theme', $dashboardSettings['default_theme']['value']) === 'dark')>{{ __('error-log-monitor::messages.settings.theme_dark') }}</option></select></div>
+                <label class="checkbox-label" style="margin-bottom: 18px;"><input type="checkbox" name="statistics_collapsed_by_default" value="1" @checked(old('statistics_collapsed_by_default', $dashboardSettings['statistics_collapsed_by_default']['value']))> {{ __('error-log-monitor::messages.settings.statistics_collapsed_by_default') }}</label>
+                <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.settings.save_dashboard') }}</button>
+            </form>
+            <form method="POST" action="{{ route('error-log-monitor.settings.override.destroy') }}" style="margin-top: 12px;">@csrf @method('DELETE')<input type="hidden" name="group" value="dashboard">@foreach(['per_page', 'default_interval', 'date_format', 'statistics_collapsed_by_default', 'default_theme'] as $key)<input type="hidden" name="keys[]" value="{{ $key }}">@endforeach<button type="submit" class="btn">{{ __('error-log-monitor::messages.settings.reset_dashboard_to_config') }}</button></form>
         </div>
 
         <div class="settings-panel" data-settings-panel="notifications" hidden>
@@ -242,13 +300,59 @@
                     @endforeach
                 </fieldset>
 
+                <div class="field" style="max-width: 240px; margin-bottom: 18px;"><label for="notification-cooldown">{{ __('error-log-monitor::messages.notifications.cooldown_minutes') }}</label><input id="notification-cooldown" type="number" min="0" max="10080" name="cooldown_minutes" value="{{ old('cooldown_minutes', $notificationSettings['cooldown_minutes']) }}"></div>
+
                 @error('levels')<div class="settings-warning">{{ $message }}</div>@enderror
 
                 <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.notifications.save') }}</button>
             </form>
         </div>
+
+        <div class="settings-panel" data-settings-panel="retention" hidden>
+            <div class="settings-warning">{{ __('error-log-monitor::messages.settings.retention_warning') }}</div>
+            <form method="POST" action="{{ route('error-log-monitor.settings.retention.update') }}">
+                @csrf
+                @method('PUT')
+                @foreach(['occurrences_days', 'resolved_issues_days', 'ignored_issues_days', 'open_issues_days'] as $key)
+                    <div class="field" style="margin-bottom: 14px;">
+                        <label for="retention-{{ $key }}">{{ __('error-log-monitor::messages.settings.'.$key) }}</label>
+                        <input id="retention-{{ $key }}" type="number" name="{{ $key }}" min="0" max="36500" value="{{ old($key, $retentionSettings[$key]['value']) }}">
+                        <small>{{ __('error-log-monitor::messages.settings.zero_unlimited') }} · {{ __('error-log-monitor::messages.settings.configured_value', ['value' => $retentionSettings[$key]['configured'] ?? 0]) }} @if($retentionSettings[$key]['overridden']) · {{ __('error-log-monitor::messages.settings.overridden') }} @endif</small>
+                        @error($key)<div class="settings-warning">{{ $message }}</div>@enderror
+                    </div>
+                @endforeach
+                <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.settings.save_retention') }}</button>
+            </form>
+            <form method="POST" action="{{ route('error-log-monitor.settings.override.destroy') }}" style="margin-top: 12px;">
+                @csrf
+                @method('DELETE')
+                <input type="hidden" name="group" value="retention"><input type="hidden" name="key" value="*">
+                <button type="submit" class="btn">{{ __('error-log-monitor::messages.settings.reset_to_config') }}</button>
+            </form>
+        </div>
     </div>
 </dialog>
+
+<div class="card" style="margin-bottom: 18px;">
+    <div class="section-heading">
+        <div><h2>{{ __('error-log-monitor::messages.indexing_health.title') }}</h2><p>{{ __('error-log-monitor::messages.indexing_health.description') }}</p></div>
+        @if($indexingHealth['latest'])
+            <span class="monitoring-status {{ $indexingHealth['latest']->status === 'completed' ? 'is-enabled' : 'is-disabled' }}">{{ strtoupper($indexingHealth['latest']->status) }}</span>
+        @endif
+    </div>
+    @if($indexingHealth['latest'])
+        <div class="stats-grid">
+            <div class="stat"><span>{{ __('error-log-monitor::messages.indexing_health.last_run') }}</span> <strong>{{ $indexingHealth['latest']->finished_at?->format($dateFormat) }}</strong></div>
+            <div class="stat"><span>{{ __('error-log-monitor::messages.indexing_health.duration') }}</span> <strong>{{ $indexingHealth['latest']->duration_ms }} ms</strong></div>
+            <div class="stat"><span>{{ __('error-log-monitor::messages.indexing_health.files') }}</span> <strong>{{ $indexingHealth['latest']->processed_files }}/{{ $indexingHealth['latest']->discovered_files }}</strong></div>
+            <div class="stat"><span>{{ __('error-log-monitor::messages.indexing_health.backlog') }}</span> <strong>{{ $indexingHealth['latest']->pending_files + $indexingHealth['latest']->partially_processed_files }}</strong></div>
+            <div class="stat"><span>{{ __('error-log-monitor::messages.indexing_health.partial_24h') }}</span> <strong>{{ $indexingHealth['partial_runs_24h'] }}</strong></div>
+            <div class="stat"><span>{{ __('error-log-monitor::messages.indexing_health.reason') }}</span> <strong>{{ $indexingHealth['latest']->stop_reason ?? '—' }}</strong></div>
+        </div>
+    @else
+        <p>{{ __('error-log-monitor::messages.indexing_health.no_runs') }}</p>
+    @endif
+</div>
 
 <div class="card">
     <form method="GET" action="{{ route('error-log-monitor.dashboard') }}">

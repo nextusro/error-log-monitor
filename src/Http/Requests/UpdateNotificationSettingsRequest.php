@@ -28,6 +28,7 @@ class UpdateNotificationSettingsRequest extends FormRequest
             'database_size_threshold_mb' => ['required', 'integer', 'min:1', 'max:2147483647'],
             'levels' => ['present', 'array'],
             'levels.*' => ['string', Rule::in(config('error-log-monitor.dashboard.levels', []))],
+            'cooldown_minutes' => ['sometimes', 'integer', 'min:0', 'max:10080'],
         ];
     }
 

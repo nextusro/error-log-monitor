@@ -13,6 +13,10 @@ use Nextus\ErrorLogMonitor\Http\Controllers\UpdateBulkActionsSettingController;
 use Nextus\ErrorLogMonitor\Http\Controllers\UpdateLocaleSettingController;
 use Nextus\ErrorLogMonitor\Http\Controllers\UpdateMonitoringStateController;
 use Nextus\ErrorLogMonitor\Http\Controllers\UpdateNotificationSettingsController;
+use Nextus\ErrorLogMonitor\Http\Controllers\UpdateIndexingSettingsController;
+use Nextus\ErrorLogMonitor\Http\Controllers\UpdateRetentionSettingsController;
+use Nextus\ErrorLogMonitor\Http\Controllers\ResetSettingController;
+use Nextus\ErrorLogMonitor\Http\Controllers\UpdateDashboardSettingsController;
 use Nextus\ErrorLogMonitor\Http\Middleware\SetDashboardLocale;
 
 $routeConfig = config('error-log-monitor.route', []);
@@ -36,4 +40,8 @@ Route::prefix($routeConfig['prefix'] ?? 'admin/error-log-monitor')
         Route::put('/settings/bulk-actions', UpdateBulkActionsSettingController::class)->name('settings.bulk-actions.update');
         Route::put('/settings/locale', UpdateLocaleSettingController::class)->name('settings.locale.update');
         Route::put('/settings/notifications', UpdateNotificationSettingsController::class)->name('settings.notifications.update');
+        Route::put('/settings/indexing', UpdateIndexingSettingsController::class)->name('settings.indexing.update');
+        Route::put('/settings/retention', UpdateRetentionSettingsController::class)->name('settings.retention.update');
+        Route::delete('/settings/override', ResetSettingController::class)->name('settings.override.destroy');
+        Route::put('/settings/dashboard', UpdateDashboardSettingsController::class)->name('settings.dashboard.update');
     });

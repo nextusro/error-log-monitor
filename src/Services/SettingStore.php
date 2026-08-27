@@ -85,6 +85,46 @@ class SettingStore
         });
     }
 
+    public function forget(string $group, string $key, ?Authenticatable $actor = null): void
+    {
+        $this->definition($group, $key);
+        $actorDetails = $this->actorDetails($actor);
+
+        DB::transaction(function () use ($group, $key, $actorDetails): void {
+            $setting = Setting::query()->where('group', $group)->where('key', $key)->lockForUpdate()->first();
+
+            if ($setting === null) {
+                return;
+            }
+
+            SettingChange::query()->create([
+                'setting_id' => null,
+                'group' => $group,
+                'key' => $key,
+                'old_value' => $setting->value,
+                'new_value' => $this->configuredValue($group, $key),
+                'changed_by_id' => $actorDetails['id'],
+                'changed_by_name' => $actorDetails['name'],
+            ]);
+
+            $setting->delete();
+        });
+    }
+
+    public function hasOverride(string $group, string $key): bool
+    {
+        return $this->settingsTableExists() && Setting::query()->where('group', $group)->where('key', $key)->exists();
+    }
+
+    public function configuredValue(string $group, string $key): mixed
+    {
+        $definition = $this->definition($group, $key);
+
+        return isset($definition['config'])
+            ? config((string) $definition['config'], $definition['default'] ?? null)
+            : ($definition['default'] ?? null);
+    }
+
     /**
      * @return array{type:string,default?:mixed,config?:string}
      */

@@ -22,6 +22,10 @@ class UpdateNotificationSettingsController extends Controller
             'levels' => array_values($request->validated('levels', [])),
         ];
 
+        if ($request->has('cooldown_minutes')) {
+            $values['cooldown_minutes'] = (int) $request->validated('cooldown_minutes');
+        }
+
         foreach ($values as $key => $value) {
             $settings->put('notifications', $key, $value, $request->user());
         }

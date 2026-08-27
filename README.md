@@ -17,7 +17,11 @@ It is designed for Laravel applications that need more than a simple log viewer.
 - Resume from the previous cursor or skip directly to new log entries
 - English and Romanian dashboard translations
 - Configurable dashboard language
-- Email notifications for new issues, regressions, and database size
+- Email notifications for new issues, regressions, database size, incomplete indexing, and recovery
+- Priority log files processed first on every run
+- Fair circular continuation for non-priority files between runs
+- Indexing run history, backlog detection, and health statistics
+- Runtime overrides for indexing, retention, notifications, and dashboard preferences
 - Config defaults with audited dashboard overrides
 - Log files and nested log directories support
 - Statistics for the selected interval
@@ -297,6 +301,7 @@ Compressed `.gz` files are excluded by default.
 
 ```php
 'indexing' => [
+    'priority_files' => ['laravel.log'],
     'max_files_per_run' => 50,
     'max_lines_per_file' => 5000,
     'max_runtime_seconds' => 30,
@@ -304,10 +309,30 @@ Compressed `.gz` files are excluded by default.
     'max_message_length' => 65535,
     'max_context_length' => 65535,
     'max_stack_trace_length' => 262144,
+    'incomplete_notification_enabled' => true,
+    'incomplete_notification_mode' => 'stale',
+    'stale_after_minutes' => 15,
+    'notification_cooldown_minutes' => 60,
+    'recovery_notification_enabled' => true,
+    'run_history_days' => 30,
 ],
 ```
 
-These values limit how much work the indexer performs in one run.
+These values limit how much work the indexer performs in one run. `max_runtime_seconds`, `max_files_per_run`, `max_lines_per_file`, the indexing health notification options, and run history retention can be overridden from the Indexing tab in the dashboard.
+
+`priority_files` is intentionally configurable only in the published config. Priority files are processed first on every run, while the remaining files continue from a separate circular cursor. Each file also keeps its own byte offset, so existing content is not re-indexed.
+
+Priority entries are relative to `logs.base_path` and support `fnmatch` patterns:
+
+```php
+'priority_files' => [
+    'laravel.log',
+    'jobs/*.log',
+    'critical.log',
+],
+```
+
+If a run reaches a configured limit, its status is stored as `partial`. The next scheduled run scans the priority files again and then resumes the normal queue after the last non-priority file processed.
 
 ### Retention configuration
 
@@ -326,6 +351,8 @@ Recommended default behavior:
 - prune old resolved issues;
 - prune old ignored issues;
 - keep open issues indefinitely.
+
+Use `0` for unlimited retention when saving values from the Retention tab. The prune command also removes indexing run history older than `indexing.run_history_days`.
 
 ### Notifications
 
@@ -350,6 +377,7 @@ The values above are defaults. The Notifications tab in the dashboard can overri
 - regression notifications;
 - database size notifications and their threshold in MB;
 - the levels that trigger notifications for newly discovered issues.
+- the general notification cooldown.
 
 Recipient addresses can be separated by commas, spaces, semicolons, or new lines. All addresses are validated and duplicates are removed before saving.
 
@@ -361,6 +389,9 @@ Notification behavior:
 - the database alert measures the package tables and indexes, not the entire host database;
 - while the database remains above the threshold, reminders respect `cooldown_minutes`;
 - after usage drops below the threshold, the alert is rearmed for the next threshold crossing.
+- incomplete indexing can notify immediately or only after the backlog has remained unresolved for the configured number of minutes;
+- repeated indexing health notifications respect their own cooldown;
+- an optional recovery notification is sent after indexing completes all available work again.
 
 Notifications use Laravel's configured mailer and are sent synchronously. A queue worker is not required. Configure mail in the host application before enabling notifications.
 
@@ -376,6 +407,15 @@ Custom notification templates are not currently configurable.
 
 The dashboard stores runtime overrides in `error_log_monitor_settings`. If no override exists, the corresponding config value is used.
 
+The settings dialog exposes:
+
+- **General:** monitoring, bulk actions, locale, pagination, default interval, date format, default theme, and the initial statistics state;
+- **Indexing:** runtime, file and line limits, backlog notification mode and thresholds, recovery notification, and run history retention;
+- **Notifications:** recipients, issue levels, regressions, database size threshold, and general cooldown;
+- **Retention:** occurrences and open, resolved, or ignored issue retention.
+
+Indexing, retention, and dashboard preference overrides can be reset to their published config values from the same dialog. `logs.base_path`, include/exclude patterns, priority files, routes, middleware, authorization, and storage length limits remain config-only settings.
+
 Changes made through the dashboard are recorded in `error_log_monitor_setting_changes`, including the authenticated actor when one is available. Protect settings routes with authentication and/or `route.authorization_gate` in production.
 
 ## Artisan commands
@@ -387,6 +427,17 @@ php artisan error-log-monitor:index
 ```
 
 This command scans the configured log files, parses relevant entries, groups them into issues, and stores occurrences.
+
+Every normal run stores its duration, status, stop reason, processed and pending file counts, partial files, failed files, parsed entries, indexed issues, and start/end cursors. Manual runs using `--file` do not advance the global circular cursor.
+
+Available options:
+
+```bash
+php artisan error-log-monitor:index --file=laravel.log
+php artisan error-log-monitor:index --file=laravel.log --fresh
+```
+
+`--fresh` resets reading to the beginning for files processed by that invocation. Without it, each file resumes from its saved byte offset.
 
 Recommended scheduler entry:
 
@@ -431,7 +482,7 @@ Schedule::command('error-log-monitor:prune')->daily();
 6. Review issues.
 7. Mark issues as resolved, ignored, or reopen them, individually or in bulk.
 8. Filter regressions and monitor statistics and database size.
-9. Configure monitoring, language, bulk actions, and notifications from the settings dialog.
+9. Configure monitoring, indexing, retention, language, bulk actions, dashboard preferences, and notifications from the settings dialog.
 10. Configure the scheduler.
 
 ## GitHub publishing checklist
@@ -489,6 +540,9 @@ Compatibility checks before claiming support for a Laravel version:
 - test English and Romanian dashboard languages;
 - test regression filtering;
 - test notification delivery with the host application's mailer.
+- test priority files and circular continuation;
+- test incomplete indexing and recovery notifications;
+- test indexing health statistics and setting resets.
 
 Manual checks:
 
@@ -512,6 +566,10 @@ Manual checks:
 - statistics collapsed/default state works;
 - files in subdirectories are indexed;
 - excluded files are not indexed.
+- priority files are indexed first on consecutive runs;
+- the non-priority cursor advances between partial runs;
+- indexing health shows the latest run, backlog, duration, and stop reason;
+- indexing and retention overrides can be saved and reset.
 
 ## Known limitations for the first version
 
@@ -593,6 +651,17 @@ Check:
 - `exclude_files` does not exclude your files;
 - the selected interval is not too restrictive;
 - the log level is included in `dashboard.levels`.
+
+### Indexing remains partial
+
+Check the **Indexing health** area for the stop reason and backlog. Common reasons are:
+
+- `runtime_limit`: increase `max_runtime_seconds` from the Indexing settings tab;
+- `file_limit`: increase `max_files_per_run`;
+- `line_limit`: the file has more unread lines than `max_lines_per_file` allows in one run;
+- `read_error`: inspect the stored error for the affected file.
+
+Partial runs are expected when processing a backlog. Priority files are scanned first on every run, and the regular file queue continues circularly from its last cursor.
 
 ### The monitor tables grow too much
 
