@@ -228,6 +228,7 @@
         .icon-action svg, .stack-toggle svg { width: 18px; height: 18px; display: block; }
         .icon-action-success:hover { color: var(--success); }
         .icon-action-warning:hover { color: var(--warning); }
+        .icon-action-danger:hover { color: var(--danger); }
         .icon-action-neutral:hover { color: #374151; }
 
         .stack-row[hidden] { display: none; }
@@ -1281,8 +1282,8 @@
                 const selected = selectedIds();
 
                 const actionLabel = event.submitter?.getAttribute('data-bulk-action-label') || @json(__('error-log-monitor::messages.javascript.changed'));
-                const confirmation = @json(__('error-log-monitor::messages.javascript.confirm_bulk'))
-                    .replace(':action', actionLabel.toLowerCase());
+                const confirmation = event.submitter?.getAttribute('data-confirmation')
+                    || @json(__('error-log-monitor::messages.javascript.confirm_bulk')).replace(':action', actionLabel.toLowerCase());
 
                 if (selected.length === 0 || !window.confirm(confirmation)) {
                     event.preventDefault();
@@ -1301,6 +1302,14 @@
 
             updateBulkState();
         })();
+
+        document.querySelectorAll('[data-delete-issue-form]').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!window.confirm(@json(__('error-log-monitor::messages.javascript.confirm_delete')))) {
+                    event.preventDefault();
+                }
+            });
+        });
 
         document.addEventListener('click', function (event) {
             const dialog = document.querySelector('[data-settings-dialog]');

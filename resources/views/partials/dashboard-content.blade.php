@@ -211,6 +211,26 @@
 
             <div class="setting-row setting-row-spaced">
                 <div>
+                    <h3>{{ __('error-log-monitor::messages.settings.deletion') }}</h3>
+                    <p>{{ __('error-log-monitor::messages.settings.deletion_description') }}</p>
+                </div>
+                <span class="monitoring-status {{ ($deletionEnabled ?? false) ? 'is-enabled' : 'is-disabled' }}">
+                    {{ ($deletionEnabled ?? false) ? __('error-log-monitor::messages.settings.active') : __('error-log-monitor::messages.settings.disabled') }}
+                </span>
+            </div>
+
+            <form method="POST" action="{{ route('error-log-monitor.settings.deletion.update') }}">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="enabled" value="{{ ($deletionEnabled ?? false) ? '0' : '1' }}">
+
+                <button type="submit" class="btn {{ ($deletionEnabled ?? false) ? 'btn-danger' : 'btn-primary' }}">
+                    {{ ($deletionEnabled ?? false) ? __('error-log-monitor::messages.settings.disable_deletion') : __('error-log-monitor::messages.settings.enable_deletion') }}
+                </button>
+            </form>
+
+            <div class="setting-row setting-row-spaced">
+                <div>
                     <h3>{{ __('error-log-monitor::messages.settings.language') }}</h3>
                     <p>{{ __('error-log-monitor::messages.settings.language_description') }}</p>
                 </div>
@@ -597,6 +617,18 @@
             >
                 @csrf
                 <span data-bulk-hidden-inputs></span>
+                @if($deletionEnabled ?? false)
+                    <button
+                        type="submit"
+                        class="btn btn-danger"
+                        formaction="{{ route('error-log-monitor.issues.destroy-bulk') }}"
+                        data-bulk-action-button
+                        data-bulk-action-label="{{ __('error-log-monitor::messages.bulk.deleted_action') }}"
+                        data-confirmation="{{ __('error-log-monitor::messages.javascript.confirm_delete_bulk') }}"
+                    >
+                        {{ __('error-log-monitor::messages.bulk.delete_selected') }} (<span data-bulk-selected-count>0</span>)
+                    </button>
+                @endif
                 <button
                     type="submit"
                     class="btn btn-warning"
@@ -664,7 +696,7 @@
                         <tr id="issue-{{ $issue->id }}" @class(['issue-row-focused' => $isFocusedIssue])>
                             @if($bulkActionsEnabled ?? true)
                                 <td class="col-select">
-                                    @if($issue->status === 'open')
+                                    @if($issue->status === 'open' || ($deletionEnabled ?? false))
                                         <input
                                             type="checkbox"
                                             value="{{ $issue->id }}"
@@ -750,16 +782,18 @@
 
                             <td>
                                 <div class="icon-actions">
-                                    @if($issue->status === 'open')
-                                        <form method="POST" action="{{ route('error-log-monitor.issues.resolve', $issue->id) }}" class="inline-form">
+                                    @if($deletionEnabled ?? false)
+                                        <form method="POST" action="{{ route('error-log-monitor.issues.destroy', $issue->id) }}" class="inline-form" data-delete-issue-form>
                                             @csrf
-                                            <button type="submit" class="icon-action icon-action-success" title="{{ __('error-log-monitor::messages.issues.resolve') }}" aria-label="{{ __('error-log-monitor::messages.issues.resolve') }}">
+                                            @method('DELETE')
+                                            <button type="submit" class="icon-action icon-action-danger" title="{{ __('error-log-monitor::messages.issues.delete') }}" aria-label="{{ __('error-log-monitor::messages.issues.delete') }}">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M20 6L9 17l-5-5"></path>
+                                                    <path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5M14 11v5"></path>
                                                 </svg>
                                             </button>
                                         </form>
-
+                                    @endif
+                                    @if($issue->status === 'open')
                                         <form method="POST" action="{{ route('error-log-monitor.issues.ignore', $issue->id) }}" class="inline-form">
                                             @csrf
                                             <button type="submit" class="icon-action icon-action-warning" title="{{ __('error-log-monitor::messages.issues.ignore') }}" aria-label="{{ __('error-log-monitor::messages.issues.ignore') }}">
@@ -768,6 +802,15 @@
                                                     <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83"></path>
                                                     <path d="M9.88 5.09A10.94 10.94 0 0 1 12 5c5 0 9.27 3.11 11 7-1 2.18-2.71 3.96-4.86 5.14"></path>
                                                     <path d="M6.71 6.72C3.8 8.18 1.73 10.88 1 12c.91 1.97 2.37 3.6 4.18 4.73"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
+
+                                        <form method="POST" action="{{ route('error-log-monitor.issues.resolve', $issue->id) }}" class="inline-form">
+                                            @csrf
+                                            <button type="submit" class="icon-action icon-action-success" title="{{ __('error-log-monitor::messages.issues.resolve') }}" aria-label="{{ __('error-log-monitor::messages.issues.resolve') }}">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M20 6L9 17l-5-5"></path>
                                                 </svg>
                                             </button>
                                         </form>
@@ -840,7 +883,7 @@
 
                 <div id="issue-{{ $issue->id }}" @class(['issue-card', 'issue-row-focused' => $isFocusedIssue])>
                     <div class="issue-card-top">
-                        @if(($bulkActionsEnabled ?? true) && $issue->status === 'open')
+                        @if(($bulkActionsEnabled ?? true) && ($issue->status === 'open' || ($deletionEnabled ?? false)))
                             <input
                                 type="checkbox"
                                 class="mobile-bulk-checkbox"
@@ -949,16 +992,18 @@
 
                     <div class="issue-card-actions">
                         <div class="icon-actions">
-                            @if($issue->status === 'open')
-                                <form method="POST" action="{{ route('error-log-monitor.issues.resolve', $issue->id) }}" class="inline-form">
+                            @if($deletionEnabled ?? false)
+                                <form method="POST" action="{{ route('error-log-monitor.issues.destroy', $issue->id) }}" class="inline-form" data-delete-issue-form>
                                     @csrf
-                                    <button type="submit" class="icon-action icon-action-success" title="{{ __('error-log-monitor::messages.issues.resolve') }}" aria-label="{{ __('error-log-monitor::messages.issues.resolve') }}">
+                                    @method('DELETE')
+                                    <button type="submit" class="icon-action icon-action-danger" title="{{ __('error-log-monitor::messages.issues.delete') }}" aria-label="{{ __('error-log-monitor::messages.issues.delete') }}">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M20 6L9 17l-5-5"></path>
+                                            <path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5M14 11v5"></path>
                                         </svg>
                                     </button>
                                 </form>
-
+                            @endif
+                            @if($issue->status === 'open')
                                 <form method="POST" action="{{ route('error-log-monitor.issues.ignore', $issue->id) }}" class="inline-form">
                                     @csrf
                                     <button type="submit" class="icon-action icon-action-warning" title="{{ __('error-log-monitor::messages.issues.ignore') }}" aria-label="{{ __('error-log-monitor::messages.issues.ignore') }}">
@@ -967,6 +1012,15 @@
                                             <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83"></path>
                                             <path d="M9.88 5.09A10.94 10.94 0 0 1 12 5c5 0 9.27 3.11 11 7-1 2.18-2.71 3.96-4.86 5.14"></path>
                                             <path d="M6.71 6.72C3.8 8.18 1.73 10.88 1 12c.91 1.97 2.37 3.6 4.18 4.73"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{{ route('error-log-monitor.issues.resolve', $issue->id) }}" class="inline-form">
+                                    @csrf
+                                    <button type="submit" class="icon-action icon-action-success" title="{{ __('error-log-monitor::messages.issues.resolve') }}" aria-label="{{ __('error-log-monitor::messages.issues.resolve') }}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20 6L9 17l-5-5"></path>
                                         </svg>
                                     </button>
                                 </form>

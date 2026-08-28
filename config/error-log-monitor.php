@@ -69,6 +69,7 @@ return [
 
     'features' => [
         'bulk_actions_enabled' => true,
+        'deletion_enabled' => false,
     ],
 
     'logs' => [
@@ -128,6 +129,11 @@ return [
                 'type' => 'boolean',
                 'config' => 'error-log-monitor.features.bulk_actions_enabled',
                 'default' => true,
+            ],
+            'deletion_enabled' => [
+                'type' => 'boolean',
+                'config' => 'error-log-monitor.features.deletion_enabled',
+                'default' => false,
             ],
             'per_page' => ['type' => 'integer', 'config' => 'error-log-monitor.dashboard.per_page', 'default' => 50],
             'default_interval' => ['type' => 'string', 'config' => 'error-log-monitor.dashboard.default_interval', 'default' => '24h'],

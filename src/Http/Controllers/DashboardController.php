@@ -85,6 +85,7 @@ class DashboardController extends Controller
                 'setting' => $monitoringState->setting(),
             ],
             'bulkActionsEnabled' => (bool) $settings->get('dashboard', 'bulk_actions_enabled'),
+            'deletionEnabled' => (bool) $settings->get('dashboard', 'deletion_enabled'),
             'dashboardLocale' => app()->getLocale(),
             'dashboardLocales' => config('error-log-monitor.dashboard.locales', []),
             'dashboardSettings' => collect(['per_page', 'default_interval', 'date_format', 'statistics_collapsed_by_default', 'default_theme'])
