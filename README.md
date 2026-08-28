@@ -379,7 +379,17 @@ Recommended default behavior:
 - use a positive issue-retention value only when permanent issue deletion is desired;
 - keep open issues indefinitely.
 
-Use `0` for unlimited retention when saving values from the Retention tab. The prune command also removes indexing run history older than `indexing.run_history_days`.
+All retention values can also be changed from the dashboard's **Settings → Retention** tab. Use `0` for unlimited retention. Dashboard values override the published configuration until they are reset from the same tab.
+
+`max_occurrences_per_issue` limits stored samples, not the historical total:
+
+- `LogIssue::occurrences_count` continues to count every indexed occurrence;
+- `0` stores every occurrence;
+- `1` retains only the first occurrence;
+- values greater than `1` retain the first occurrence and the latest `N - 1` occurrences;
+- the limit is applied by `error-log-monitor:prune`, not during indexing.
+
+The prune command also removes indexing run history older than `indexing.run_history_days`.
 
 ### Notifications
 
@@ -481,7 +491,7 @@ Multiple rules can be active at the same time. They run by ascending priority an
 
 Creating, updating, enabling, disabling, reprioritizing, or deleting a rule does not regroup issues during the HTTP request. It increments the grouping-rules version and marks regrouping as pending. The next `error-log-monitor:index` run performs regrouping before reading log files.
 
-Rebuilding uses stored occurrence messages as its source and processes issues and occurrences in bounded chunks. This avoids loading the complete monitor database into PHP memory. Data already removed by retention cannot be reconstructed; historical counts without stored occurrences are assigned using the issue's last stored message. Keep `indexing.store_occurrences` enabled when reversible regrouping is important.
+Rebuilding uses stored occurrence messages as its source and processes issues and occurrences in bounded chunks. This avoids loading the complete monitor database into PHP memory. Data removed by time retention or the per-issue sample limit cannot be reconstructed; historical counts without stored occurrences are assigned using the issue's last stored message. Keep `indexing.store_occurrences` enabled and choose a sufficiently high `max_occurrences_per_issue` when reversible regrouping is important.
 
 ## Artisan commands
 
@@ -520,9 +530,9 @@ For very active applications, start with `everyFiveMinutes()` or `everyTenMinute
 php artisan error-log-monitor:prune
 ```
 
-This command removes old monitor data and applies the per-issue occurrence limit. The occurrence total on each issue remains historical even when only a limited number of samples are stored. The first sample and the latest samples are retained.
+This command removes old monitor data in bounded batches and applies the per-issue occurrence limit. The occurrence total on each issue remains historical even when only a limited number of samples are stored.
 
-When `optimize_tables_after_prune` is enabled, affected tables are rebuilt after data is deleted so disk space is reclaimed. This operation may temporarily lock large tables, so schedule pruning during a low-traffic period.
+When `optimize_tables_after_prune` is enabled and data was deleted, affected tables are rebuilt so disk space is reclaimed. The command uses `OPTIMIZE TABLE` on MySQL/MariaDB, `VACUUM (FULL, ANALYZE)` on PostgreSQL, and `VACUUM` on file-backed SQLite databases. These operations may temporarily lock large tables, so schedule pruning during a low-traffic period.
 
 Recommended scheduler entry:
 
