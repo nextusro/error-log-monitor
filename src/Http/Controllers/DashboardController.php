@@ -64,7 +64,10 @@ class DashboardController extends Controller
             'stale_after_minutes', 'notification_cooldown_minutes',
             'recovery_notification_enabled', 'run_history_days',
         ];
-        $retentionKeys = ['occurrences_days', 'resolved_issues_days', 'ignored_issues_days', 'open_issues_days'];
+        $retentionKeys = [
+            'occurrences_days', 'max_occurrences_per_issue', 'optimize_tables_after_prune',
+            'resolved_issues_days', 'ignored_issues_days', 'open_issues_days',
+        ];
         $latestIndexRun = IndexRun::query()->latest('id')->first();
 
         return view('error-log-monitor::dashboard', [

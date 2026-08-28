@@ -338,6 +338,12 @@
             <form method="POST" action="{{ route('error-log-monitor.settings.retention.update') }}">
                 @csrf
                 @method('PUT')
+                <div class="field" style="margin-bottom: 14px;">
+                    <label for="retention-max-occurrences-per-issue">{{ __('error-log-monitor::messages.settings.max_occurrences_per_issue') }}</label>
+                    <input id="retention-max-occurrences-per-issue" type="number" name="max_occurrences_per_issue" min="0" max="100000" value="{{ old('max_occurrences_per_issue', $retentionSettings['max_occurrences_per_issue']['value']) }}">
+                    <small>{{ __('error-log-monitor::messages.settings.zero_unlimited_occurrences') }} · {{ __('error-log-monitor::messages.settings.configured_value', ['value' => $retentionSettings['max_occurrences_per_issue']['configured'] ?? 100]) }} @if($retentionSettings['max_occurrences_per_issue']['overridden']) · {{ __('error-log-monitor::messages.settings.overridden') }} @endif</small>
+                    @error('max_occurrences_per_issue')<div class="settings-warning">{{ $message }}</div>@enderror
+                </div>
                 @foreach(['occurrences_days', 'resolved_issues_days', 'ignored_issues_days', 'open_issues_days'] as $key)
                     <div class="field" style="margin-bottom: 14px;">
                         <label for="retention-{{ $key }}">{{ __('error-log-monitor::messages.settings.'.$key) }}</label>
@@ -346,6 +352,11 @@
                         @error($key)<div class="settings-warning">{{ $message }}</div>@enderror
                     </div>
                 @endforeach
+                <input type="hidden" name="optimize_tables_after_prune" value="0">
+                <label class="resume-option" style="margin-bottom: 14px;">
+                    <input type="checkbox" name="optimize_tables_after_prune" value="1" @checked((bool) old('optimize_tables_after_prune', $retentionSettings['optimize_tables_after_prune']['value']))>
+                    <span><strong>{{ __('error-log-monitor::messages.settings.optimize_tables_after_prune') }}</strong><small>{{ __('error-log-monitor::messages.settings.optimize_tables_after_prune_help') }}</small></span>
+                </label>
                 <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.settings.save_retention') }}</button>
             </form>
             <form method="POST" action="{{ route('error-log-monitor.settings.override.destroy') }}" style="margin-top: 12px;">

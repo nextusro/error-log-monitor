@@ -97,8 +97,10 @@ return [
 
     'retention' => [
         'occurrences_days' => 30,
-        'resolved_issues_days' => 60,
-        'ignored_issues_days' => 60,
+        'max_occurrences_per_issue' => 100,
+        'optimize_tables_after_prune' => true,
+        'resolved_issues_days' => 0,
+        'ignored_issues_days' => 0,
         'open_issues_days' => null,
     ],
 
@@ -154,8 +156,10 @@ return [
         ],
         'retention' => [
             'occurrences_days' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.occurrences_days', 'default' => 30],
-            'resolved_issues_days' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.resolved_issues_days', 'default' => 60],
-            'ignored_issues_days' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.ignored_issues_days', 'default' => 60],
+            'max_occurrences_per_issue' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.max_occurrences_per_issue', 'default' => 100],
+            'optimize_tables_after_prune' => ['type' => 'boolean', 'config' => 'error-log-monitor.retention.optimize_tables_after_prune', 'default' => true],
+            'resolved_issues_days' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.resolved_issues_days', 'default' => 0],
+            'ignored_issues_days' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.ignored_issues_days', 'default' => 0],
             'open_issues_days' => ['type' => 'integer', 'config' => 'error-log-monitor.retention.open_issues_days', 'default' => 0],
         ],
         'notifications' => [

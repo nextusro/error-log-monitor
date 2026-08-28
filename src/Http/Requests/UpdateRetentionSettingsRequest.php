@@ -18,6 +18,8 @@ class UpdateRetentionSettingsRequest extends FormRequest
     {
         return [
             'occurrences_days' => ['required', 'integer', 'min:0', 'max:36500'],
+            'max_occurrences_per_issue' => ['required', 'integer', 'min:0', 'max:100000'],
+            'optimize_tables_after_prune' => ['required', 'boolean'],
             'resolved_issues_days' => ['required', 'integer', 'min:0', 'max:36500'],
             'ignored_issues_days' => ['required', 'integer', 'min:0', 'max:36500'],
             'open_issues_days' => ['required', 'integer', 'min:0', 'max:36500'],

@@ -363,8 +363,10 @@ If a run reaches a configured limit, its status is stored as `partial`. The next
 ```php
 'retention' => [
     'occurrences_days' => 30,
-    'resolved_issues_days' => 60,
-    'ignored_issues_days' => 60,
+    'max_occurrences_per_issue' => 100,
+    'optimize_tables_after_prune' => true,
+    'resolved_issues_days' => 0,
+    'ignored_issues_days' => 0,
     'open_issues_days' => null,
 ],
 ```
@@ -372,8 +374,9 @@ If a run reaches a configured limit, its status is stored as `partial`. The next
 Recommended default behavior:
 
 - prune old occurrences;
-- prune old resolved issues;
-- prune old ignored issues;
+- retain resolved issues indefinitely so recurring errors can be detected as regressions;
+- retain ignored issues indefinitely so their ignored state is remembered;
+- use a positive issue-retention value only when permanent issue deletion is desired;
 - keep open issues indefinitely.
 
 Use `0` for unlimited retention when saving values from the Retention tab. The prune command also removes indexing run history older than `indexing.run_history_days`.
@@ -517,7 +520,9 @@ For very active applications, start with `everyFiveMinutes()` or `everyTenMinute
 php artisan error-log-monitor:prune
 ```
 
-This command removes old monitor data based on the retention configuration.
+This command removes old monitor data and applies the per-issue occurrence limit. The occurrence total on each issue remains historical even when only a limited number of samples are stored. The first sample and the latest samples are retained.
+
+When `optimize_tables_after_prune` is enabled, affected tables are rebuilt after data is deleted so disk space is reclaimed. This operation may temporarily lock large tables, so schedule pruning during a low-traffic period.
 
 Recommended scheduler entry:
 
@@ -739,8 +744,10 @@ Check the Statistics area in the dashboard, then adjust retention:
 ```php
 'retention' => [
     'occurrences_days' => 14,
-    'resolved_issues_days' => 30,
-    'ignored_issues_days' => 30,
+    'max_occurrences_per_issue' => 100,
+    'optimize_tables_after_prune' => true,
+    'resolved_issues_days' => 0,
+    'ignored_issues_days' => 0,
     'open_issues_days' => null,
 ],
 ```

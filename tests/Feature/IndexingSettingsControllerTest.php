@@ -50,13 +50,17 @@ class IndexingSettingsControllerTest extends TestCase
     {
         $this->put(route('error-log-monitor.settings.retention.update'), [
             'occurrences_days' => 14,
+            'max_occurrences_per_issue' => 250,
+            'optimize_tables_after_prune' => true,
             'resolved_issues_days' => 30,
             'ignored_issues_days' => 45,
             'open_issues_days' => 0,
         ])->assertRedirect();
 
         $this->assertSame(14, app(SettingStore::class)->get('retention', 'occurrences_days'));
-        $this->assertSame(4, Setting::query()->where('group', 'retention')->count());
+        $this->assertSame(250, app(SettingStore::class)->get('retention', 'max_occurrences_per_issue'));
+        $this->assertTrue(app(SettingStore::class)->get('retention', 'optimize_tables_after_prune'));
+        $this->assertSame(6, Setting::query()->where('group', 'retention')->count());
     }
 
     public function test_dashboard_preferences_can_be_overridden_without_resetting_locale(): void
