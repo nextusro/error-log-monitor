@@ -21,6 +21,10 @@ use Nextus\ErrorLogMonitor\Http\Controllers\ResetSettingController;
 use Nextus\ErrorLogMonitor\Http\Controllers\UpdateDashboardSettingsController;
 use Nextus\ErrorLogMonitor\Http\Controllers\UpdateDeletionSettingController;
 use Nextus\ErrorLogMonitor\Http\Middleware\SetDashboardLocale;
+use Nextus\ErrorLogMonitor\Http\Controllers\DeleteNormalizationRuleController;
+use Nextus\ErrorLogMonitor\Http\Controllers\StoreNormalizationRuleController;
+use Nextus\ErrorLogMonitor\Http\Controllers\SuggestNormalizationRuleController;
+use Nextus\ErrorLogMonitor\Http\Controllers\UpdateNormalizationRuleController;
 
 $routeConfig = config('error-log-monitor.route', []);
 $middleware = $routeConfig['middleware'] ?? ['web'];
@@ -50,4 +54,8 @@ Route::prefix($routeConfig['prefix'] ?? 'admin/error-log-monitor')
         Route::put('/settings/retention', UpdateRetentionSettingsController::class)->name('settings.retention.update');
         Route::delete('/settings/override', ResetSettingController::class)->name('settings.override.destroy');
         Route::put('/settings/dashboard', UpdateDashboardSettingsController::class)->name('settings.dashboard.update');
+        Route::post('/normalization-rules/suggest', SuggestNormalizationRuleController::class)->name('normalization-rules.suggest');
+        Route::post('/normalization-rules', StoreNormalizationRuleController::class)->name('normalization-rules.store');
+        Route::put('/normalization-rules/{normalizationRule}', UpdateNormalizationRuleController::class)->name('normalization-rules.update');
+        Route::delete('/normalization-rules/{normalizationRule}', DeleteNormalizationRuleController::class)->name('normalization-rules.destroy');
     });

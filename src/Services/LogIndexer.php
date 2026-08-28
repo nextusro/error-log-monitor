@@ -18,10 +18,25 @@ class LogIndexer
         private readonly LogIssueIndexer $issueIndexer,
         private readonly MonitoringState $monitoringState,
         private readonly NotificationManager $notifications,
+        private readonly GroupingStateManager $groupingStateManager,
     ) {}
 
     /**
-     * @return array{files:int,entries:int,issues:int,skipped:int}
+     * @return array{
+     *     files: int,
+     *     entries: int,
+     *     issues: int,
+     *     skipped: int,
+     *     discovered_files?: int,
+     *     pending_files?: int,
+     *     partially_processed_files?: int,
+     *     failed_files?: int,
+     *     processed_lines?: int,
+     *     completed?: bool,
+     *     stop_reason?: ?string,
+     *     regrouped?: bool,
+     *     regrouping?: array{before: int, after: int, occurrences: int}|null
+     * }
      */
     public function run(?string $onlyFile = null, bool $fresh = false): array
     {
@@ -30,6 +45,8 @@ class LogIndexer
         }
 
         $startedAt = microtime(true);
+        $regrouping = $this->groupingStateManager->regroupIfPending();
+        $indexingStartedAt = microtime(true);
         $settings = app(SettingStore::class);
         $maxRuntime = max(5, (int) $settings->get('indexing', 'max_runtime_seconds'));
         $maxFiles = max(1, (int) $settings->get('indexing', 'max_files_per_run'));
@@ -44,6 +61,7 @@ class LogIndexer
             'discovered_files' => count($paths), 'pending_files' => 0,
             'partially_processed_files' => 0, 'failed_files' => 0,
             'processed_lines' => 0, 'completed' => true, 'stop_reason' => null,
+            'regrouped' => $regrouping !== null, 'regrouping' => $regrouping,
         ];
         $errors = [];
         $endCursor = null;
@@ -62,7 +80,7 @@ class LogIndexer
                 break;
             }
 
-            if ((microtime(true) - $startedAt) >= $maxRuntime) {
+            if ((microtime(true) - $indexingStartedAt) >= $maxRuntime) {
                 $stats['completed'] = false;
                 $stats['stop_reason'] = 'runtime_limit';
                 break;

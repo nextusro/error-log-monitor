@@ -9,6 +9,9 @@ It is designed for Laravel applications that need more than a simple log viewer.
 - Standalone Laravel dashboard
 - Database-backed log indexing
 - Error grouping by fingerprint
+- Configurable grouping rules using readable message templates or regular expressions
+- Rule suggestions generated from two or more selected issues
+- Deferred, memory-bounded regrouping before the next indexing run
 - Issue statuses: `open`, `resolved`, `ignored`
 - Regression detection, statistics, and filtering
 - Filtering by level, interval, query, file, directory, and status
@@ -152,7 +155,8 @@ The package creates tables for:
 - individual log occurrences;
 - dashboard setting overrides;
 - setting change history;
-- notification delivery state and deduplication.
+- notification delivery state and deduplication;
+- normalization rules and grouping-version state.
 
 ## Dashboard
 
@@ -413,10 +417,48 @@ The settings dialog exposes:
 - **Indexing:** runtime, file and line limits, backlog notification mode and thresholds, recovery notification, and run history retention;
 - **Notifications:** recipients, issue levels, regressions, database size threshold, and general cooldown;
 - **Retention:** occurrences and open, resolved, or ignored issue retention.
+- **Grouping rules:** message templates and regular expressions used to normalize dynamic values before fingerprinting.
 
 Indexing, retention, and dashboard preference overrides can be reset to their published config values from the same dialog. `logs.base_path`, include/exclude patterns, priority files, routes, middleware, authorization, and storage length limits remain config-only settings.
 
 Changes made through the dashboard are recorded in `error_log_monitor_setting_changes`, including the authenticated actor when one is available. Protect settings routes with authentication and/or `route.authorization_gate` in production.
+
+### Custom grouping rules
+
+The default fingerprint contains the log level, exception class, normalized message, and top stack frame. Built-in normalization replaces dates, standalone numbers, and hexadecimal values. The **Grouping rules** tab can normalize additional application-specific identifiers.
+
+For common cases, use a message template instead of a regular expression:
+
+```text
+[id:{number}][act_{number}] no active token found
+```
+
+Supported template placeholders are:
+
+- `{number}` for one or more digits;
+- `{uuid}` for a standard UUID;
+- `{hex}` for hexadecimal values, optionally prefixed by `0x`;
+- `{value}` for any non-empty value.
+
+The template above groups messages such as:
+
+```text
+[id:142][act_991] no active token found
+[id:875][act_12004] no active token found
+```
+
+The replacement field is ignored for message-template rules. For advanced cases, choose **Regular expression** and provide both a PHP-compatible pattern and its replacement:
+
+```text
+Pattern:     /\[code:[A-Z0-9]+\]/i
+Replacement: [code:{code}]
+```
+
+Multiple rules can be active at the same time. They run by ascending priority and then by creation order. Existing rules are applied before the dashboard suggests another rule, so selecting two or more issues can identify the next uncovered variable segment. Generated patterns are always presented for review and editing before they are saved.
+
+Creating, updating, enabling, disabling, reprioritizing, or deleting a rule does not regroup issues during the HTTP request. It increments the grouping-rules version and marks regrouping as pending. The next `error-log-monitor:index` run performs regrouping before reading log files.
+
+Rebuilding uses stored occurrence messages as its source and processes issues and occurrences in bounded chunks. This avoids loading the complete monitor database into PHP memory. Data already removed by retention cannot be reconstructed; historical counts without stored occurrences are assigned using the issue's last stored message. Keep `indexing.store_occurrences` enabled when reversible regrouping is important.
 
 ## Artisan commands
 
@@ -427,6 +469,8 @@ php artisan error-log-monitor:index
 ```
 
 This command scans the configured log files, parses relevant entries, groups them into issues, and stores occurrences.
+
+Before scanning files, the command compares the current grouping-rules version with the last grouped version. In the usual case they match and this is a single inexpensive database lookup. When regrouping is pending, the command rebuilds issue groups first, prints the before/after group counts, and then starts the normal indexing runtime budget. A failed regroup remains pending and log files are not processed with partially rebuilt groups.
 
 Every normal run stores its duration, status, stop reason, processed and pending file counts, partial files, failed files, parsed entries, indexed issues, and start/end cursors. Manual runs using `--file` do not advance the global circular cursor.
 
@@ -482,7 +526,7 @@ Schedule::command('error-log-monitor:prune')->daily();
 6. Review issues.
 7. Mark issues as resolved, ignored, or reopen them, individually or in bulk.
 8. Filter regressions and monitor statistics and database size.
-9. Configure monitoring, indexing, retention, language, bulk actions, dashboard preferences, and notifications from the settings dialog.
+9. Configure monitoring, indexing, retention, grouping rules, language, bulk actions, dashboard preferences, and notifications from the settings dialog.
 10. Configure the scheduler.
 
 ## GitHub publishing checklist
@@ -543,6 +587,10 @@ Compatibility checks before claiming support for a Laravel version:
 - test priority files and circular continuation;
 - test incomplete indexing and recovery notifications;
 - test indexing health statistics and setting resets.
+- create multiple template and regex grouping rules;
+- generate a grouping-rule proposal from selected issues;
+- verify that a rule change is marked pending and applied by the next index run;
+- test regrouping with a production-like occurrence volume.
 
 Manual checks:
 
@@ -570,6 +618,8 @@ Manual checks:
 - the non-priority cursor advances between partial runs;
 - indexing health shows the latest run, backlog, duration, and stop reason;
 - indexing and retention overrides can be saved and reset.
+- template and regex grouping rules can be created, edited, disabled, and deleted;
+- pending regrouping runs before new log files are processed.
 
 ## Known limitations for the first version
 
@@ -586,7 +636,6 @@ Manual checks:
 ### v0.2
 
 - parser tests;
-- fingerprinting tests;
 - dashboard stats tests;
 - status/health command;
 - full reindex command;

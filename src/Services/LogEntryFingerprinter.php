@@ -8,6 +8,8 @@ use Nextus\ErrorLogMonitor\Data\ParsedLogEntry;
 
 class LogEntryFingerprinter
 {
+    public function __construct(private readonly MessageNormalizer $normalizer) {}
+
     public function fingerprint(ParsedLogEntry $entry): string
     {
         return hash('sha256', implode('|', [
@@ -20,13 +22,7 @@ class LogEntryFingerprinter
 
     public function normalizeMessage(string $message): string
     {
-        $message = trim($message);
-        $message = preg_replace('/\b\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}\b/', '{datetime}', $message) ?? $message;
-        $message = preg_replace('/\b\d+\b/', '{number}', $message) ?? $message;
-        $message = preg_replace('/0x[0-9a-f]+/i', '{hex}', $message) ?? $message;
-        $message = preg_replace('/\s+/', ' ', $message) ?? $message;
-
-        return trim($message);
+        return $this->normalizer->normalize($message);
     }
 
     private function topStackFrame(?string $stackTrace): string

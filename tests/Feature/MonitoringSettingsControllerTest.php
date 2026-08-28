@@ -45,8 +45,8 @@ class MonitoringSettingsControllerTest extends TestCase
         $response->assertSee('data-bulk-actions-form', false);
         $response->assertSee('class="bulk-actions-toolbar"', false);
         $response->assertSee('hidden', false);
-        $response->assertSeeInOrder(['Ignore selected', 'Resolve selected']);
-        $this->assertSame(2, substr_count($response->getContent(), '<span data-bulk-selected-count>'));
+        $response->assertSeeInOrder(['Group selected', 'Ignore selected', 'Resolve selected']);
+        $this->assertSame(3, substr_count($response->getContent(), '<span data-bulk-selected-count>'));
     }
 
     public function test_settings_blade_templates_compile_independently(): void

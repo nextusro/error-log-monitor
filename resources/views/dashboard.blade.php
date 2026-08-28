@@ -1253,7 +1253,11 @@
                 const available = [...new Set(checkboxes.map(function (checkbox) { return checkbox.value; }))];
 
                 form.hidden = selected.length === 0;
-                actionButtons.forEach(function (button) { button.disabled = selected.length === 0; });
+                actionButtons.forEach(function (button) {
+                    button.disabled = button.hasAttribute('data-normalization-suggest')
+                        ? selected.length < 2
+                        : selected.length === 0;
+                });
                 counts.forEach(function (count) { count.textContent = String(selected.length); });
 
                 if (selectAll) {
@@ -1281,6 +1285,23 @@
             form.addEventListener('submit', function (event) {
                 const selected = selectedIds();
 
+                hiddenInputs.replaceChildren();
+                selected.forEach(function (issueId) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'issue_ids[]';
+                    input.value = issueId;
+                    hiddenInputs.appendChild(input);
+                });
+
+                if (event.submitter?.hasAttribute('data-normalization-suggest')) {
+                    if (selected.length < 2) {
+                        event.preventDefault();
+                    }
+
+                    return;
+                }
+
                 const actionLabel = event.submitter?.getAttribute('data-bulk-action-label') || @json(__('error-log-monitor::messages.javascript.changed'));
                 const confirmation = event.submitter?.getAttribute('data-confirmation')
                     || @json(__('error-log-monitor::messages.javascript.confirm_bulk')).replace(':action', actionLabel.toLowerCase());
@@ -1290,14 +1311,6 @@
                     return;
                 }
 
-                hiddenInputs.replaceChildren();
-                selected.forEach(function (issueId) {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'issue_ids[]';
-                    input.value = issueId;
-                    hiddenInputs.appendChild(input);
-                });
             });
 
             updateBulkState();

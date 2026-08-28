@@ -36,9 +36,13 @@
     </div>
 @endif
 
-@if($errors->has('monitoring'))
+@if($errors->any())
     <div class="monitoring-banner monitoring-banner-danger">
-        {{ $errors->first('monitoring') }}
+        <div>
+            @foreach($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
     </div>
 @endif
 
@@ -82,6 +86,7 @@
             <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="indexing">{{ __('error-log-monitor::messages.settings.indexing') }}</button>
             <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="notifications">{{ __('error-log-monitor::messages.settings.notifications') }}</button>
             <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="retention">{{ __('error-log-monitor::messages.settings.retention') }}</button>
+            <button type="button" class="settings-tab" role="tab" aria-selected="false" data-settings-tab="normalization">{{ __('error-log-monitor::messages.normalization.title') }}</button>
         </div>
 
         <div class="settings-panel" data-settings-panel="indexing" hidden>
@@ -350,6 +355,49 @@
                 <button type="submit" class="btn">{{ __('error-log-monitor::messages.settings.reset_to_config') }}</button>
             </form>
         </div>
+
+        <div class="settings-panel" data-settings-panel="normalization" hidden>
+            <div class="settings-warning">{{ __('error-log-monitor::messages.normalization.regroup_warning') }}</div>
+            @if($normalizationRegroupPending)
+                <div class="monitoring-banner monitoring-banner-warning" style="margin-top: 12px;">{{ __('error-log-monitor::messages.normalization.pending') }}</div>
+            @endif
+
+            <details style="margin: 18px 0;" @if($normalizationRules->isEmpty()) open @endif>
+                <summary class="btn" style="display: inline-flex; cursor: pointer;">{{ __('error-log-monitor::messages.normalization.add') }}</summary>
+                <form method="POST" action="{{ route('error-log-monitor.normalization-rules.store') }}" style="border: 1px solid #dfe3ea; border-radius: 10px; padding: 18px; margin-top: 12px;">
+                    @csrf
+                    <input type="hidden" name="enabled" value="0">
+                    <div class="field" style="margin-bottom: 10px;"><label for="new-normalization-name">{{ __('error-log-monitor::messages.normalization.name') }}</label><input id="new-normalization-name" name="name" value="{{ old('name') }}" required maxlength="255"></div>
+                    <div class="field" style="margin-bottom: 10px;"><label for="new-normalization-type">{{ __('error-log-monitor::messages.normalization.type') }}</label><select id="new-normalization-type" name="type"><option value="template" @selected(old('type', 'template') === 'template')>{{ __('error-log-monitor::messages.normalization.type_template') }}</option><option value="regex" @selected(old('type') === 'regex')>{{ __('error-log-monitor::messages.normalization.type_regex') }}</option></select></div>
+                    <div class="field" style="margin-bottom: 10px;"><label for="new-normalization-pattern">{{ __('error-log-monitor::messages.normalization.pattern_or_template') }}</label><input id="new-normalization-pattern" name="pattern" value="{{ old('pattern') }}" placeholder="[id:{number}][act_{number}] no active token found" required maxlength="1000"><small>{{ __('error-log-monitor::messages.normalization.template_help') }}</small></div>
+                    <div class="field" style="margin-bottom: 10px;"><label for="new-normalization-replacement">{{ __('error-log-monitor::messages.normalization.regex_replacement') }}</label><input id="new-normalization-replacement" name="replacement" value="{{ old('replacement', '') }}" placeholder="{{ __('error-log-monitor::messages.normalization.regex_replacement_help') }}" maxlength="1000"></div>
+                    <div class="field" style="max-width: 180px; margin-bottom: 10px;"><label for="new-normalization-priority">{{ __('error-log-monitor::messages.normalization.priority') }}</label><input id="new-normalization-priority" type="number" name="priority" min="0" max="10000" value="{{ old('priority', 100) }}"></div>
+                    <label class="checkbox-label" style="margin-bottom: 12px;"><input type="checkbox" name="enabled" value="1" @checked(old('enabled', true))> {{ __('error-log-monitor::messages.normalization.enabled') }}</label>
+                    @foreach(['name', 'pattern', 'replacement', 'priority', 'enabled'] as $field)
+                        @error($field)<div class="settings-warning" style="margin-bottom: 8px;">{{ $message }}</div>@enderror
+                    @endforeach
+                    <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.normalization.create') }}</button>
+                </form>
+            </details>
+
+            @forelse($normalizationRules as $normalizationRule)
+                <form method="POST" action="{{ route('error-log-monitor.normalization-rules.update', $normalizationRule) }}" style="border-bottom: 1px solid #dfe3ea; padding: 0 0 18px; margin-bottom: 18px;">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="enabled" value="0">
+                    <div class="field" style="margin-bottom: 10px;"><label>{{ __('error-log-monitor::messages.normalization.name') }}</label><input name="name" value="{{ $normalizationRule->name }}" required maxlength="255"></div>
+                    <div class="field" style="margin-bottom: 10px;"><label>{{ __('error-log-monitor::messages.normalization.type') }}</label><select name="type"><option value="template" @selected($normalizationRule->type === 'template')>{{ __('error-log-monitor::messages.normalization.type_template') }}</option><option value="regex" @selected($normalizationRule->type === 'regex')>{{ __('error-log-monitor::messages.normalization.type_regex') }}</option></select></div>
+                    <div class="field" style="margin-bottom: 10px;"><label>{{ __('error-log-monitor::messages.normalization.pattern_or_template') }}</label><input name="pattern" value="{{ $normalizationRule->pattern }}" required maxlength="1000"></div>
+                    <div class="field" style="margin-bottom: 10px;"><label>{{ __('error-log-monitor::messages.normalization.regex_replacement') }}</label><input name="replacement" value="{{ $normalizationRule->replacement }}" maxlength="1000"></div>
+                    <div class="field" style="max-width: 180px; margin-bottom: 10px;"><label>{{ __('error-log-monitor::messages.normalization.priority') }}</label><input type="number" name="priority" min="0" max="10000" value="{{ $normalizationRule->priority }}"></div>
+                    <label class="checkbox-label" style="margin-bottom: 12px;"><input type="checkbox" name="enabled" value="1" @checked($normalizationRule->enabled)> {{ __('error-log-monitor::messages.normalization.enabled') }}</label>
+                    <button type="submit" class="btn btn-primary">{{ __('error-log-monitor::messages.normalization.update') }}</button>
+                    <button type="submit" class="btn btn-danger" formmethod="POST" formaction="{{ route('error-log-monitor.normalization-rules.destroy', $normalizationRule) }}" name="_method" value="DELETE" onclick="return window.confirm(@js(__('error-log-monitor::messages.normalization.confirm_delete')))" style="margin-left: 6px;">{{ __('error-log-monitor::messages.normalization.delete') }}</button>
+                </form>
+            @empty
+                <p>{{ __('error-log-monitor::messages.normalization.empty') }}</p>
+            @endforelse
+        </div>
     </div>
 </dialog>
 
@@ -617,6 +665,15 @@
             >
                 @csrf
                 <span data-bulk-hidden-inputs></span>
+                <button
+                    type="submit"
+                    class="btn"
+                    formaction="{{ route('error-log-monitor.normalization-rules.suggest') }}"
+                    data-bulk-action-button
+                    data-normalization-suggest
+                >
+                    {{ __('error-log-monitor::messages.normalization.group_selected') }} (<span data-bulk-selected-count>0</span>)
+                </button>
                 @if($deletionEnabled ?? false)
                     <button
                         type="submit"

@@ -9,10 +9,12 @@ use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 use Nextus\ErrorLogMonitor\Models\LogFile;
 use Nextus\ErrorLogMonitor\Models\IndexRun;
+use Nextus\ErrorLogMonitor\Models\NormalizationRule;
 use Nextus\ErrorLogMonitor\Queries\DashboardIssuesQuery;
 use Nextus\ErrorLogMonitor\Queries\DashboardStatsQuery;
 use Nextus\ErrorLogMonitor\Services\MonitoringState;
 use Nextus\ErrorLogMonitor\Services\SettingStore;
+use Nextus\ErrorLogMonitor\Services\GroupingStateManager;
 
 class DashboardController extends Controller
 {
@@ -22,6 +24,7 @@ class DashboardController extends Controller
         DashboardStatsQuery $statsQuery,
         MonitoringState $monitoringState,
         SettingStore $settings,
+        GroupingStateManager $groupingStateManager,
     ): View {
         $filters = [
             'level' => $request->query('level'),
@@ -112,6 +115,8 @@ class DashboardController extends Controller
                 'partial_runs_24h' => IndexRun::query()->where('started_at', '>=', now()->subDay())->where('status', '!=', 'completed')->count(),
                 'oldest_scan_at' => LogFile::query()->where('is_missing', false)->min('last_scanned_at'),
             ],
+            'normalizationRules' => NormalizationRule::query()->orderBy('priority')->orderBy('id')->get(),
+            'normalizationRegroupPending' => $groupingStateManager->isPending(),
         ]);
     }
 }

@@ -29,6 +29,14 @@ class IndexErrorLogsCommand extends Command
             fresh: (bool) $this->option('fresh'),
         );
 
+        if ($stats['regrouped']) {
+            $this->info(sprintf(
+                'Regrouped %d existing issues into %d groups before indexing.',
+                $stats['regrouping']['before'],
+                $stats['regrouping']['after'],
+            ));
+        }
+
         $this->info(sprintf(
             'Indexed %d files, parsed %d entries, stored %d relevant issues. Skipped %d files.',
             $stats['files'],
