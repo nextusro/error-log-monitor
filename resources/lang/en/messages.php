@@ -190,6 +190,12 @@ return [
         'indexing_progress' => 'Processed :processed/:discovered files; pending: :pending; partial: :partial; failed: :failed.',
         'indexing_reason' => 'Reason: :reason',
     ],
+    'migrations' => [
+        'title' => 'Error Log Monitor database update required',
+        'description' => 'The installed package contains database changes that have not been applied yet. Run the migrations before using the dashboard.',
+        'production_hint' => 'For production deployments, use php artisan migrate --force.',
+        'missing_requirements' => 'Missing database requirements',
+    ],
     'validation' => [
         'locale_required' => 'Select a language.', 'locale_invalid' => 'The selected language is not supported.',
         'bulk_required' => 'Select at least one error.', 'bulk_max' => 'You may update at most 500 errors in one operation.',

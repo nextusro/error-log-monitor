@@ -60,6 +60,12 @@ return array_replace_recursive($english, [
         'deleted' => 'Regula a fost ștearsă. Regruparea este programată pentru următoarea rulare de indexare.',
         'suggestion_failed' => 'Nu a putut fi dedusă o regulă sigură din erorile selectate.',
     ],
+    'migrations' => [
+        'title' => 'Baza de date Error Log Monitor trebuie actualizată',
+        'description' => 'Versiunea instalată a pachetului conține modificări ale bazei de date care nu au fost aplicate. Rulează migrările înainte de a folosi dashboardul.',
+        'production_hint' => 'Pentru deploymenturile în producție folosește php artisan migrate --force.',
+        'missing_requirements' => 'Cerințe lipsă din baza de date',
+    ],
     'filters' => ['all' => 'Toate', 'query_placeholder' => 'Caută în mesaj, excepție, stack trace...', 'file' => 'Fișier', 'all_files' => 'Toate fișierele', 'directory' => 'Subdirector', 'all_directories' => 'Toate subdirectoarele', 'filter' => 'Filtrează', 'reset' => 'Resetează'],
     'status' => ['open' => 'Deschise', 'resolved' => 'Rezolvate', 'ignored' => 'Ignorate', 'regressions' => 'Regresii', 'all' => 'Toate'],
     'intervals' => ['1h' => 'Ultima oră', '24h' => 'Ultimele 24 de ore', '7d' => 'Ultimele 7 zile', '14d' => 'Ultimele 14 zile', 'all' => 'Tot intervalul'],

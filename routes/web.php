@@ -21,6 +21,7 @@ use Nextus\ErrorLogMonitor\Http\Controllers\ResetSettingController;
 use Nextus\ErrorLogMonitor\Http\Controllers\UpdateDashboardSettingsController;
 use Nextus\ErrorLogMonitor\Http\Controllers\UpdateDeletionSettingController;
 use Nextus\ErrorLogMonitor\Http\Middleware\SetDashboardLocale;
+use Nextus\ErrorLogMonitor\Http\Middleware\EnsureMigrationsAreCurrent;
 use Nextus\ErrorLogMonitor\Http\Controllers\DeleteNormalizationRuleController;
 use Nextus\ErrorLogMonitor\Http\Controllers\StoreNormalizationRuleController;
 use Nextus\ErrorLogMonitor\Http\Controllers\SuggestNormalizationRuleController;
@@ -35,7 +36,7 @@ if (! empty($routeConfig['authorization_gate'])) {
 
 Route::prefix($routeConfig['prefix'] ?? 'admin/error-log-monitor')
     ->as($routeConfig['name'] ?? 'error-log-monitor.')
-    ->middleware([...$middleware, SetDashboardLocale::class])
+    ->middleware([...$middleware, EnsureMigrationsAreCurrent::class, SetDashboardLocale::class])
     ->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
         Route::post('/issues/{issue}/resolve', ResolveIssueController::class)->name('issues.resolve');

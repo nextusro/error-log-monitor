@@ -93,6 +93,7 @@ Then run:
 ```bash
 composer update nextus/error-log-monitor
 php artisan optimize:clear
+php artisan error-log-monitor:install
 ```
 
 For a private repository, make sure your local machine and deployment server have access through SSH keys or GitHub tokens.
@@ -147,6 +148,25 @@ Be careful: `--force` overwrites local changes in `config/error-log-monitor.php`
 ```bash
 php artisan migrate
 ```
+
+The install command can publish the configuration and run migrations in one step:
+
+```bash
+php artisan error-log-monitor:install --migrate
+```
+
+Use `--force` only when configuration overwrite is intended and production migrations must be forced.
+
+## Upgrading
+
+Composer installs the package migrations but does not execute them. After every package upgrade, run:
+
+```bash
+composer update nextus/error-log-monitor
+php artisan migrate
+```
+
+Production deployments should use `php artisan migrate --force`. If an upgrade introduces database changes and migrations have not been run, package web routes return a maintenance response with the required command instead of failing with a missing-table or missing-column exception.
 
 The package creates tables for:
 

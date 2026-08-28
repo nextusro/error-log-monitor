@@ -6,6 +6,7 @@ namespace Nextus\ErrorLogMonitor;
 
 use Illuminate\Support\ServiceProvider;
 use Nextus\ErrorLogMonitor\Console\IndexErrorLogsCommand;
+use Nextus\ErrorLogMonitor\Console\InstallErrorLogMonitorCommand;
 use Nextus\ErrorLogMonitor\Console\PruneErrorLogsCommand;
 
 class ErrorLogMonitorServiceProvider extends ServiceProvider
@@ -58,6 +59,7 @@ class ErrorLogMonitorServiceProvider extends ServiceProvider
         }
 
         $this->commands([
+            InstallErrorLogMonitorCommand::class,
             IndexErrorLogsCommand::class,
             PruneErrorLogsCommand::class,
         ]);
