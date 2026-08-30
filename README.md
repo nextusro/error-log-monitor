@@ -306,7 +306,12 @@ Bulk actions allow up to 500 selected open issues to be resolved or ignored in o
 'logs' => [
     'base_path' => storage_path('logs'),
     'include_files' => ['*.log', '**/*.log', '*.log.1', '**/*.log.1'],
-    'exclude_files' => ['*.gz', '**/*.gz'],
+    'exclude_files' => [
+        '*.gz',
+        '**/*.gz',
+        'schedule-*.log',
+        '**/schedule-*.log',
+    ],
 ],
 ```
 
@@ -319,7 +324,20 @@ storage/logs/imports/orders.log
 storage/logs/bank-statements/smart-fintech.log
 ```
 
-Compressed `.gz` files are excluded by default.
+Compressed `.gz` files and suffixed schedule logs such as `schedule-2026-08-30.log`
+are excluded by default. The exact `schedule.log` filename remains included.
+
+Both lists accept glob patterns. Add a root pattern and its `**/` variant when the
+same filename pattern must apply in nested directories. For example:
+
+```php
+'exclude_files' => [
+    'schedule-*.log',
+    '**/schedule-*.log',
+    'worker-debug-*.log',
+    '**/worker-debug-*.log',
+],
+```
 
 ### Indexing configuration
 

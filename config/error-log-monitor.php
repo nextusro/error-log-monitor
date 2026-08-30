@@ -75,7 +75,12 @@ return [
     'logs' => [
         'base_path' => storage_path('logs'),
         'include_files' => ['*.log', '**/*.log', '*.log.1', '**/*.log.1'],
-        'exclude_files' => ['*.gz', '**/*.gz'],
+        'exclude_files' => [
+            '*.gz',
+            '**/*.gz',
+            'schedule-*.log',
+            '**/schedule-*.log',
+        ],
     ],
 
     'indexing' => [
