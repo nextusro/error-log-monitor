@@ -166,6 +166,10 @@
         .stat-danger .stat-value { color: var(--critical); }
 
         .stats-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+        .statistics-scope { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 14px; color: var(--muted); font-size: 12px; }
+        .statistics-scope-options { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--input-bg); }
+        .statistics-scope-link { padding: 5px 10px; border-radius: 999px; color: var(--muted); font-weight: 700; text-decoration: none; }
+        .statistics-scope-link.is-active { color: var(--text-strong); background: var(--card-bg); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); }
         .stats-panel { border: 1px solid var(--line); border-radius: 12px; background: var(--input-bg); padding: 14px; }
         .stats-panel h3 { margin: 0 0 12px; font-size: 15px; font-weight: 700; color: #374151; }
         .stats-list { display: flex; flex-direction: column; gap: 10px; }

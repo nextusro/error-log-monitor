@@ -22,6 +22,7 @@ class DashboardStatsQuery
     public function build(Request $request): array
     {
         $interval = $this->interval($request);
+        $scope = $this->scope($request);
         $from = $this->resolveIntervalStart($interval);
         $levels = $this->levelsWithoutWarnings();
         $criticalLevels = array_values(array_intersect($levels, ['critical', 'alert', 'emergency']));
@@ -29,6 +30,7 @@ class DashboardStatsQuery
         return [
             'interval' => $interval,
             'interval_label' => trans("error-log-monitor::messages.intervals.{$interval}"),
+            'scope' => $scope,
             'from' => $from,
             'cards' => [
                 'open_issues' => $this->openIssues($from, $levels),
@@ -39,8 +41,8 @@ class DashboardStatsQuery
                 'last_indexed_at' => $this->lastIndexedAt(),
             ],
             'database' => $this->databaseUsage(),
-            'top_issues' => $this->topIssues($from, $levels),
-            'top_sources' => $this->topSources($from, $levels),
+            'top_issues' => $this->topIssues($from, $levels, $scope),
+            'top_sources' => $this->topSources($from, $levels, $scope),
         ];
     }
 
@@ -65,6 +67,11 @@ class DashboardStatsQuery
         }
 
         return $interval;
+    }
+
+    private function scope(Request $request): string
+    {
+        return $request->query('statistics_scope') === 'all' ? 'all' : 'active';
     }
 
     private function resolveIntervalStart(string $interval): ?Carbon
@@ -177,17 +184,21 @@ class DashboardStatsQuery
      * @param  list<string>  $levels
      * @return list<array{issue:LogIssue, occurrences:int}>
      */
-    private function topIssues(?Carbon $from, array $levels): array
+    private function topIssues(?Carbon $from, array $levels, string $scope): array
     {
         if ($levels === []) {
             return [];
         }
 
         $rows = LogOccurrence::query()
-            ->select('issue_id', DB::raw('COUNT(*) as occurrences'))
-            ->whereIn('level', $levels)
-            ->when($from, fn ($query) => $query->where('occurred_at', '>=', $from))
-            ->groupBy('issue_id')
+            ->select('error_log_monitor_occurrences.issue_id', DB::raw('COUNT(*) as occurrences'))
+            ->join('error_log_monitor_issues as statistics_issues', 'statistics_issues.id', '=', 'error_log_monitor_occurrences.issue_id')
+            ->whereIn('error_log_monitor_occurrences.level', $levels)
+            ->when($scope === 'active', fn ($query) => $query
+                ->whereNull('statistics_issues.resolved_at')
+                ->whereNull('statistics_issues.ignored_at'))
+            ->when($from, fn ($query) => $query->where('error_log_monitor_occurrences.occurred_at', '>=', $from))
+            ->groupBy('error_log_monitor_occurrences.issue_id')
             ->orderByDesc('occurrences')
             ->limit(5)
             ->get();
@@ -226,7 +237,7 @@ class DashboardStatsQuery
      * @param  list<string>  $levels
      * @return list<array{source:string, occurrences:int}>
      */
-    private function topSources(?Carbon $from, array $levels): array
+    private function topSources(?Carbon $from, array $levels, string $scope): array
     {
         if ($levels === []) {
             return [];
@@ -235,8 +246,12 @@ class DashboardStatsQuery
         return LogOccurrence::query()
             ->selectRaw("COALESCE(NULLIF(file_path_snapshot, ''), '-') as source")
             ->selectRaw('COUNT(*) as occurrences')
-            ->whereIn('level', $levels)
-            ->when($from, fn ($query) => $query->where('occurred_at', '>=', $from))
+            ->join('error_log_monitor_issues as statistics_issues', 'statistics_issues.id', '=', 'error_log_monitor_occurrences.issue_id')
+            ->whereIn('error_log_monitor_occurrences.level', $levels)
+            ->when($scope === 'active', fn ($query) => $query
+                ->whereNull('statistics_issues.resolved_at')
+                ->whereNull('statistics_issues.ignored_at'))
+            ->when($from, fn ($query) => $query->where('error_log_monitor_occurrences.occurred_at', '>=', $from))
             ->groupByRaw("COALESCE(NULLIF(file_path_snapshot, ''), '-')")
             ->orderByDesc('occurrences')
             ->limit(5)

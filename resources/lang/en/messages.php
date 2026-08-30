@@ -159,6 +159,7 @@ return [
         'critical_levels' => 'critical / alert / emergency', 'regressions' => 'Regressions', 'regressions_hint' => 'resolved, but occurred again',
         'last_indexed' => 'Last indexed', 'last_scan' => 'last scan', 'db_records' => 'DB records', 'db_size' => 'DB size',
         'db_size_hint' => 'data + indexes for monitor tables', 'top_issues' => 'Top recurring issues', 'top_sources' => 'Top sources',
+        'scope_label' => 'Ranking scope', 'scope_active' => 'Active', 'scope_all' => 'All',
         'no_data' => 'No data exists for the selected interval.', 'view_issue' => 'View issue in list',
     ],
     'issues' => [

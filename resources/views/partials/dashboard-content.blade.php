@@ -609,6 +609,22 @@
                 </div>
             </div>
 
+            @php
+                $statisticsScope = $statistics['scope'] ?? 'active';
+            @endphp
+
+            <div class="statistics-scope">
+                <span>{{ __('error-log-monitor::messages.statistics.scope_label') }}</span>
+                <div class="statistics-scope-options">
+                    @foreach(['active', 'all'] as $scope)
+                        <a
+                            class="statistics-scope-link {{ $statisticsScope === $scope ? 'is-active' : '' }}"
+                            href="{{ route('error-log-monitor.dashboard', array_merge(request()->query(), ['statistics_scope' => $scope])) }}"
+                        >{{ __('error-log-monitor::messages.statistics.scope_'.$scope) }}</a>
+                    @endforeach
+                </div>
+            </div>
+
             <div class="stats-panels">
                 <div class="stats-panel">
                     <h3>{{ __('error-log-monitor::messages.statistics.top_issues') }}</h3>

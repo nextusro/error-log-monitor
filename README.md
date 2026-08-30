@@ -284,6 +284,12 @@ Notes:
 - dashboard language overrides are stored in the package settings table;
 - notification language is independent of the dashboard selection and uses the host application's `app.locale` when the notification is sent.
 
+Dashboard cards such as new issues and occurrences describe the complete history
+for the selected interval. The recurring-issue and top-source rankings are
+operational by default and include only currently open issues. Use the independent
+**Ranking scope: Active / All** selector to include resolved and ignored issues in
+those rankings; changing it does not alter the issue-list status filter.
+
 The package ships with English and Romanian translations. Published translations can be customized with:
 
 ```bash
